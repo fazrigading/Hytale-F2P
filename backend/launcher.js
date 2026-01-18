@@ -163,5 +163,9 @@ module.exports = {
   handleFirstLaunchCheck,
   
   // Path functions
-  getResolvedAppDir
+  getResolvedAppDir,
+
+  // GPU Preference functions
+  saveGpuPreference,
+  loadGpuPreference
 };
