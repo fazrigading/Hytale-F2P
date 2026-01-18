@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { exec, execFile, spawn } = require('child_process');
+const { exec, execFile, execSync, spawn } = require('child_process');
 const { promisify } = require('util');
 const axios = require('axios');
 const AdmZip = require('adm-zip');
@@ -68,21 +68,76 @@ function setupWaylandEnvironment() {
   return envVars;
 }
 
+function detectGpu() {
+  if (process.platform !== 'linux') {
+    return { mode: 'integrated', vendor: 'intel' };
+  }
+
+  try {
+    const output = execSync('lspci -nn | grep \'VGA\\|3D\'', { encoding: 'utf8' });
+    console.log('GPU detection raw output:', output);
+    const lines = output.split('\n').filter(line => line.trim());
+    console.log('GPU detection parsed lines:', lines);
+
+    let hasNvidia = false;
+    let hasAmd = false;
+
+    for (const line of lines) {
+      console.log('Checking line:', line);
+      if (line.includes('VGA') || line.includes('3D')) {
+        console.log('Line contains VGA or 3D');
+        if (line.includes('10de:') || line.toLowerCase().includes('nvidia')) {
+          hasNvidia = true;
+          console.log('Detected NVIDIA');
+        }
+        if (line.includes('1002:') || line.toLowerCase().includes('amd') || line.toLowerCase().includes('radeon')) {
+          hasAmd = true;
+          console.log('Detected AMD');
+        }
+      }
+    }
+
+    console.log('hasNvidia:', hasNvidia, 'hasAmd:', hasAmd);
+
+    if (hasNvidia) {
+      return { mode: 'dedicated', vendor: 'nvidia' };
+    } else if (hasAmd) {
+      return { mode: 'dedicated', vendor: 'amd' };
+    } else {
+      return { mode: 'integrated', vendor: 'intel' };
+    }
+  } catch (error) {
+    console.warn('GPU detection failed, falling back to integrated:', error.message);
+    return { mode: 'integrated', vendor: 'intel' };
+  }
+}
+
 function setupGpuEnvironment(gpuPreference) {
-  if (gpuPreference === 'auto' || process.platform !== 'linux') {
+  if (process.platform !== 'linux') {
     return {};
   }
 
-  console.log('Preferred GPU set to:', gpuPreference);
+  let finalPreference = gpuPreference;
+  let detected = null;
+
+  if (gpuPreference === 'auto') {
+    detected = detectGpu();
+    finalPreference = detected.mode;
+    console.log(`Auto-detected GPU: ${detected.vendor} (${detected.mode})`);
+  }
+
+  console.log('Preferred GPU set to:', finalPreference);
 
   const envVars = {};
 
-  if (gpuPreference === 'dedicated') {
+  if (finalPreference === 'dedicated') {
     envVars.DRI_PRIME = '1';
-    envVars.__NV_PRIME_RENDER_OFFLOAD = '1';
-    envVars.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
-    envVars.__GL_SHADER_DISK_CACHE = '1';
-    envVars.__GL_SHADER_DISK_CACHE_PATH = '/tmp';
+    if (detected && detected.vendor === 'nvidia') {
+      envVars.__NV_PRIME_RENDER_OFFLOAD = '1';
+      envVars.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
+      envVars.__GL_SHADER_DISK_CACHE = '1';
+      envVars.__GL_SHADER_DISK_CACHE_PATH = '/tmp';
+    }
     console.log('GPU environment variables:', envVars);
   } else {
     console.log('Using integrated GPU, no environment variables set');
@@ -2256,5 +2311,6 @@ module.exports = {
   handleFirstLaunchCheck,
   getResolvedAppDir,
   saveGpuPreference,
-  loadGpuPreference
+  loadGpuPreference,
+  detectGpu
 };
