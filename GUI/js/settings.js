@@ -5,6 +5,7 @@ let customJavaPath;
 let browseJavaBtn;
 let settingsPlayerName;
 let discordRPCCheck;
+let gpuPreferenceSelect;
 
 // UUID Management elements
 let currentUuidDisplay;
@@ -142,6 +143,7 @@ function showCustomConfirm(message, title = 'Confirm Action', onConfirm, onCance
   document.addEventListener('keydown', handleEscape);
 }
 
+
 export function initSettings() {
   setupSettingsElements();
   loadAllSettings();
@@ -154,6 +156,7 @@ function setupSettingsElements() {
   browseJavaBtn = document.getElementById('browseJavaBtn');
   settingsPlayerName = document.getElementById('settingsPlayerName');
   discordRPCCheck = document.getElementById('discordRPCCheck');
+  gpuPreferenceSelect = document.getElementById('gpuPreferenceSelect');
 
   // UUID Management elements
   currentUuidDisplay = document.getElementById('currentUuid');
@@ -226,7 +229,11 @@ function setupSettingsElements() {
       }
     });
   }
-}
+
+  if (gpuPreferenceSelect) {
+    gpuPreferenceSelect.addEventListener('change', saveGpuPreference);
+  }
+  }
 
 function toggleCustomJava() {
   if (!customJavaOptions) return;
@@ -361,11 +368,36 @@ async function loadPlayerName() {
   }
 }
 
+async function saveGpuPreference() {
+  try {
+    if (window.electronAPI && window.electronAPI.saveGpuPreference && gpuPreferenceSelect) {
+      const gpuPreference = gpuPreferenceSelect.value;
+      await window.electronAPI.saveGpuPreference(gpuPreference);
+    }
+  } catch (error) {
+    console.error('Error saving GPU preference:', error);
+  }
+}
+
+async function loadGpuPreference() {
+  try {
+    if (window.electronAPI && window.electronAPI.loadGpuPreference && gpuPreferenceSelect) {
+      const savedPreference = await window.electronAPI.loadGpuPreference();
+      if (savedPreference) {
+        gpuPreferenceSelect.value = savedPreference;
+      }
+    }
+  } catch (error) {
+    console.error('Error loading GPU preference:', error);
+  }
+}
+
 async function loadAllSettings() {
   await loadCustomJavaPath();
   await loadPlayerName();
   await loadCurrentUuid();
   await loadDiscordRPC();
+  await loadGpuPreference();
 }
 
 async function openGameLocation() {
