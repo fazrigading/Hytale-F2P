@@ -143,6 +143,15 @@ function markAsLaunched() {
   saveConfig({ hasLaunchedBefore: true, firstLaunchDate: new Date().toISOString() });
 }
 
+function saveGpuPreference(gpuPreference) {
+  saveConfig({ gpuPreference: gpuPreference || 'auto' });
+}
+
+function loadGpuPreference() {
+  const config = loadConfig();
+  return config.gpuPreference || 'auto';
+}
+
 module.exports = {
   loadConfig,
   saveConfig,
@@ -159,5 +168,7 @@ module.exports = {
   loadModsFromConfig,
   isFirstLaunch,
   markAsLaunched,
+  saveGpuPreference,
+  loadGpuPreference,
   CONFIG_FILE
 };

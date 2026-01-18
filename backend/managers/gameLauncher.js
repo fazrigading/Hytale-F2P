@@ -4,7 +4,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const { spawn } = require('child_process');
 const { getResolvedAppDir, findClientPath } = require('../core/paths');
-const { setupWaylandEnvironment } = require('../utils/platformUtils');
+const { setupWaylandEnvironment, setupGpuEnvironment } = require('../utils/platformUtils');
 const { saveUsername, saveInstallPath, loadJavaPath, getUuidForUser } = require('../core/config');
 const { resolveJavaPath, getJavaExec, getBundledJavaPath, detectSystemJava, JAVA_EXECUTABLE } = require('./javaManager');
 const { getInstalledClientVersion, getLatestClientVersion } = require('../services/versionManager');
@@ -12,7 +12,7 @@ const { updateGameFiles } = require('./gameManager');
 
 const execAsync = promisify(exec);
 
-async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride) {
+async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto') {
   const customAppDir = getResolvedAppDir(installPathOverride);
   const customGameDir = path.join(customAppDir, 'release', 'package', 'game', 'latest');
   const customJreDir = path.join(customAppDir, 'release', 'package', 'jre', 'latest');
@@ -129,10 +129,13 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   console.log('Starting game...');
   console.log(`Command: "${clientPath}" ${args.join(' ')}`);
 
-  const env = { ...process.env };
-  
-  const waylandEnv = setupWaylandEnvironment();
-  Object.assign(env, waylandEnv);
+   const env = { ...process.env };
+
+   const waylandEnv = setupWaylandEnvironment();
+   Object.assign(env, waylandEnv);
+
+   const gpuEnv = setupGpuEnvironment(gpuPreference);
+   Object.assign(env, gpuEnv);
 
   try {
     let spawnOptions = {
@@ -205,7 +208,7 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   }
 }
 
-async function launchGameWithVersionCheck(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride) {
+async function launchGameWithVersionCheck(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto') {
   try {
     if (progressCallback) {
       progressCallback('Checking for updates...', 0, null, null, null);
@@ -256,7 +259,7 @@ async function launchGameWithVersionCheck(playerName = 'Player', progressCallbac
       progressCallback('Launching game...', 80, null, null, null);
     }
 
-    return await launchGame(playerName, progressCallback, javaPathOverride, installPathOverride);
+    return await launchGame(playerName, progressCallback, javaPathOverride, installPathOverride, gpuPreference);
   } catch (error) {
     console.error('Error in version check and launch:', error);
     if (progressCallback) {

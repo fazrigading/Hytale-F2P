@@ -16,6 +16,8 @@ const {
   getUuidForUser,
   isFirstLaunch,
   markAsLaunched,
+  saveGpuPreference,
+  loadGpuPreference,
   CONFIG_FILE
 } = require('./core/config');
 
@@ -68,6 +70,9 @@ const {
   handleFirstLaunchCheck
 } = require('./services/firstLaunch');
 
+// Utils
+const { detectGpu } = require('./utils/platformUtils');
+
 // Re-export all functions to maintain backward compatibility
 module.exports = {
   // Game launch functions
@@ -95,6 +100,11 @@ module.exports = {
   // Installation path functions
   saveInstallPath,
   loadInstallPath,
+  
+  // GPU configuration functions
+  saveGpuPreference,
+  loadGpuPreference,
+  detectGpu,
   
   // Version functions
   getInstalledClientVersion,
