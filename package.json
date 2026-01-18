@@ -30,18 +30,18 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "electron": "^40.0.0",
+    "electron": "40.0.0",
     "electron-builder": "^26.4.0"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
     "axios": "^1.6.0",
     "discord-rpc": "^4.0.1",
-    "tar": "6.2.1",
+    "tar": "^=7.5.3",
     "uuid": "^9.0.1"
   },
   "overrides": {
-    "tar": "$tar"
+    "tar": "^=7.5.3"
   },
   "build": {
     "appId": "com.hytalef2p.launcher",
