@@ -125,7 +125,21 @@ app.whenReady().then(async () => {
   console.log('Electron version:', process.versions.electron);
   console.log('Node.js version:', process.versions.node);
   console.log('Log directory:', logger.getLogDirectory());
-  
+
+  try {
+    const { loadGpuPreference, detectGpu } = require('./backend/launcher');
+    const savedPreference = loadGpuPreference();
+    if (savedPreference === 'auto') {
+      global.detectedGpu = detectGpu(); // if 'auto' selected = preload GPU detection
+      console.log('GPU detection completed on startup:', global.detectedGpu);
+    } else {
+      console.log('GPU preference is manual, skipping auto-detection');
+    }
+  } catch (error) {
+    console.warn('Failed to preload GPU detection:', error.message);
+    global.detectedGpu = { mode: 'integrated', vendor: 'intel' };
+  }
+
   createWindow();
   
   setTimeout(async () => {
@@ -654,6 +668,16 @@ ipcMain.handle('save-gpu-preference', (event, gpuPreference) => {
 ipcMain.handle('load-gpu-preference', () => {
   const { loadGpuPreference } = require('./backend/launcher');
   return loadGpuPreference();
+});
+
+ipcMain.handle('get-detected-gpu', () => {
+  if (global.detectedGpu) {
+    return global.detectedGpu;
+  }
+  
+  const { detectGpu } = require('./backend/launcher');
+  global.detectedGpu = detectGpu();
+  return global.detectedGpu;
 });
 
 ipcMain.handle('window-close', () => {

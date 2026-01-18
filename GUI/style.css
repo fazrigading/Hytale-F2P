@@ -3991,6 +3991,14 @@ body {
     font-size: 0.75rem;
 }
 
+.gpu-detection-info {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+    display: none;
+}
+
 
 #settings-page {
     opacity: 0;
