@@ -167,5 +167,6 @@ module.exports = {
 
   // GPU Preference functions
   saveGpuPreference,
-  loadGpuPreference
+  loadGpuPreference,
+  detectGpu
 };

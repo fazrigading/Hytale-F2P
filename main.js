@@ -742,7 +742,6 @@ ipcMain.handle('get-detected-gpu', () => {
   if (global.detectedGpu) {
     return global.detectedGpu;
   }
-
   const { detectGpu } = require('./backend/launcher');
   global.detectedGpu = detectGpu();
   return global.detectedGpu;
