@@ -350,19 +350,20 @@
                                         </div>
                                     </div>
 
-                                    <div class="settings-option">
-                                        <div class="settings-input-group">
-                                            <label id="settings-input-label" class=""></label>
-                                            <select id="gpuPreferenceSelect" class="settings-input">
-                                                <option value="auto">Auto (Default)</option>
-                                                <option value="integrated">Integrated GPU</option>
-                                                <option value="dedicated">Dedicated GPU</option>
-                                            </select>
-                                            <p class="settings-hint">
-                                                <i class="fas fa-info-circle"></i>
-                                                Select your preferred GPU (Linux: affects DRI_PRIME)
-                                            </p>
+                                    <div class="settings-input-group">
+                                        <label class="settings-input-label">GPU Preference</label>
+                                        <div class="segmented-control">
+                                            <input type="radio" id="gpu-auto" name="gpuPreference" value="auto" checked>
+                                            <label for="gpu-auto">Auto</label>
+                                            <input type="radio" id="gpu-integrated" name="gpuPreference" value="integrated">
+                                            <label for="gpu-integrated">Integrated</label>
+                                            <input type="radio" id="gpu-dedicated" name="gpuPreference" value="dedicated">
+                                            <label for="gpu-dedicated">Dedicated</label>
                                         </div>
+                                        <p class="settings-hint">
+                                            <i class="fas fa-info-circle"></i>
+                                            Select your preferred GPU (Linux: affects DRI_PRIME)
+                                        </p>
                                     </div>
                                 </div>
 
