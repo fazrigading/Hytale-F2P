@@ -390,12 +390,30 @@ async function updateGpuLabel() {
 
   if (gpuPreferenceRadios) {
     const checked = Array.from(gpuPreferenceRadios).find(radio => radio.checked);
-    if (checked && checked.value === 'auto') {
+    if (checked) {
       try {
         if (window.electronAPI && window.electronAPI.getDetectedGpu) {
           const detected = await window.electronAPI.getDetectedGpu();
-          detectionInfo.textContent = `Detected: ${detected.vendor.toUpperCase()} GPU (${detected.mode})`;
-          detectionInfo.style.display = 'block';
+          if (checked.value === 'auto') {
+            if (detected.dedicatedName) {
+              detectionInfo.textContent = `dGPU detected, using ${detected.dedicatedName}`;
+            } else {
+              detectionInfo.textContent = `dGPU not detected, using iGPU (${detected.integratedName}) instead`;
+            }
+            detectionInfo.style.display = 'block';
+          } else if (checked.value === 'integrated') {
+            detectionInfo.textContent = `Detected: ${detected.integratedName}`;
+            detectionInfo.style.display = 'block';
+          } else if (checked.value === 'dedicated') {
+            if (detected.dedicatedName) {
+              detectionInfo.textContent = `Detected: ${detected.dedicatedName}`;
+            } else {
+              detectionInfo.textContent = `No dedicated GPU detected`;
+            }
+            detectionInfo.style.display = 'block';
+          } else {
+            detectionInfo.style.display = 'none';
+          }
         }
       } catch (error) {
         console.error('Error getting detected GPU:', error);

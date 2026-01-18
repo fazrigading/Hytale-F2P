@@ -165,7 +165,7 @@ app.whenReady().then(async () => {
     const savedPreference = loadGpuPreference();
     if (savedPreference === 'auto') {
       global.detectedGpu = detectGpu(); // if 'auto' selected = preload GPU detection
-      console.log('GPU detection completed on startup:', global.detectedGpu);
+      console.log('GPU auto-detection completed on startup:', global.detectedGpu);
     } else {
       console.log('GPU preference is manual, skipping auto-detection');
     }
