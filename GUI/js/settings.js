@@ -5,7 +5,7 @@ let customJavaPath;
 let browseJavaBtn;
 let settingsPlayerName;
 let discordRPCCheck;
-let gpuPreferenceSelect;
+let gpuPreferenceRadios;
 
 // UUID Management elements
 let currentUuidDisplay;
@@ -156,7 +156,7 @@ function setupSettingsElements() {
   browseJavaBtn = document.getElementById('browseJavaBtn');
   settingsPlayerName = document.getElementById('settingsPlayerName');
   discordRPCCheck = document.getElementById('discordRPCCheck');
-  gpuPreferenceSelect = document.getElementById('gpuPreferenceSelect');
+  gpuPreferenceRadios = document.querySelectorAll('input[name="gpuPreference"]');
 
   // UUID Management elements
   currentUuidDisplay = document.getElementById('currentUuid');
@@ -230,10 +230,15 @@ function setupSettingsElements() {
     });
   }
 
-  if (gpuPreferenceSelect) {
-    gpuPreferenceSelect.addEventListener('change', saveGpuPreference);
+  if (gpuPreferenceRadios) {
+    gpuPreferenceRadios.forEach(radio => {
+      radio.addEventListener('change', async () => {
+        await saveGpuPreference();
+        await updateGpuLabel();
+      });
+    });
   }
-  }
+}
 
 function toggleCustomJava() {
   if (!customJavaOptions) return;
@@ -370,8 +375,8 @@ async function loadPlayerName() {
 
 async function saveGpuPreference() {
   try {
-    if (window.electronAPI && window.electronAPI.saveGpuPreference && gpuPreferenceSelect) {
-      const gpuPreference = gpuPreferenceSelect.value;
+    if (window.electronAPI && window.electronAPI.saveGpuPreference && gpuPreferenceRadios) {
+      const gpuPreference = Array.from(gpuPreferenceRadios).find(radio => radio.checked)?.value || 'auto';
       await window.electronAPI.saveGpuPreference(gpuPreference);
     }
   } catch (error) {
@@ -379,12 +384,43 @@ async function saveGpuPreference() {
   }
 }
 
+async function updateGpuLabel() {
+  const detectionInfo = document.getElementById('gpu-detection-info');
+  if (!detectionInfo) return;
+
+  if (gpuPreferenceRadios) {
+    const checked = Array.from(gpuPreferenceRadios).find(radio => radio.checked);
+    if (checked && checked.value === 'auto') {
+      try {
+        if (window.electronAPI && window.electronAPI.getDetectedGpu) {
+          const detected = await window.electronAPI.getDetectedGpu();
+          detectionInfo.textContent = `Detected: ${detected.vendor.toUpperCase()} GPU (${detected.mode})`;
+          detectionInfo.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error getting detected GPU:', error);
+        detectionInfo.style.display = 'none';
+      }
+    } else {
+      detectionInfo.style.display = 'none';
+    }
+  } else {
+    detectionInfo.style.display = 'none';
+  }
+}
+
 async function loadGpuPreference() {
   try {
-    if (window.electronAPI && window.electronAPI.loadGpuPreference && gpuPreferenceSelect) {
+    if (window.electronAPI && window.electronAPI.loadGpuPreference && gpuPreferenceRadios) {
       const savedPreference = await window.electronAPI.loadGpuPreference();
       if (savedPreference) {
-        gpuPreferenceSelect.value = savedPreference;
+        for (const radio of gpuPreferenceRadios) {
+          if (radio.value === savedPreference) {
+            radio.checked = true;
+            break;
+          }
+        }
+        await updateGpuLabel();
       }
     }
   } catch (error) {

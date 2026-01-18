@@ -52,6 +52,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getGpuInfo: () => ipcRenderer.invoke('get-gpu-info'),
   saveGpuPreference: (gpuPreference) => ipcRenderer.invoke('save-gpu-preference', gpuPreference),
   loadGpuPreference: () => ipcRenderer.invoke('load-gpu-preference'),
+  getDetectedGpu: () => ipcRenderer.invoke('get-detected-gpu'),
 
   acceptFirstLaunchUpdate: (existingGame) => ipcRenderer.invoke('accept-first-launch-update', existingGame),
   markAsLaunched: () => ipcRenderer.invoke('mark-as-launched'),
