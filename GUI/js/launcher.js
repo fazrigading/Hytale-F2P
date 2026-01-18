@@ -57,6 +57,15 @@ export async function launch() {
     javaPath = window.SettingsAPI.getCurrentJavaPath();
   }
   
+  let gpuPreference = 'auto';
+ try {
+    if (window.electronAPI && window.electronAPI.loadGpuPreference) {
+      gpuPreference = await window.electronAPI.loadGpuPreference();
+    }
+  } catch (error) {
+    console.error('Error loading GPU preference:', error);
+  }
+
   if (window.LauncherUI) window.LauncherUI.showProgress();
   isDownloading = true;
   if (playBtn) {
@@ -66,7 +75,7 @@ export async function launch() {
   
   try {
     if (window.electronAPI && window.electronAPI.launchGame) {
-      const result = await window.electronAPI.launchGame(playerName, javaPath, '');
+      const result = await window.electronAPI.launchGame(playerName, javaPath, '', gpuPreference);
       
       if (result.success) {
         if (window.LauncherUI) {

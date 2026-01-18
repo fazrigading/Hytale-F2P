@@ -68,6 +68,28 @@ function setupWaylandEnvironment() {
   return envVars;
 }
 
+function setupGpuEnvironment(gpuPreference) {
+  if (gpuPreference === 'auto' || process.platform !== 'linux') {
+    return {};
+  }
+
+  console.log('Preferred GPU set to:', gpuPreference);
+
+  const envVars = {};
+
+  if (gpuPreference === 'dedicated') {
+    envVars.DRI_PRIME = '1';
+    envVars.__NV_PRIME_RENDER_OFFLOAD = '1';
+    envVars.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
+    envVars.__GL_SHADER_DISK_CACHE = '1';
+    envVars.__GL_SHADER_DISK_CACHE_PATH = '/tmp';
+    console.log('GPU environment variables:', envVars);
+  } else {
+    console.log('Using integrated GPU, no environment variables set');
+  }
+  return envVars;
+}
+
 function getAppDir() {
   const home = os.homedir();
   if (process.platform === 'win32') {
@@ -1453,7 +1475,7 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   };
 }
 
-async function launchGameWithVersionCheck(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride) {
+async function launchGameWithVersionCheck(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference) {
   try {
     if (progressCallback) {
       progressCallback('Checking for updates...', 0, null, null, null);
@@ -1504,7 +1526,7 @@ async function launchGameWithVersionCheck(playerName = 'Player', progressCallbac
       progressCallback('Launching game...', 80, null, null, null);
     }
 
-    return await launchGame(playerName, progressCallback, javaPathOverride, installPathOverride);
+    return await launchGame(playerName, progressCallback, javaPathOverride, installPathOverride, gpuPreference);
   } catch (error) {
     console.error('Error in version check and launch:', error);
     if (progressCallback) {
@@ -1514,7 +1536,7 @@ async function launchGameWithVersionCheck(playerName = 'Player', progressCallbac
   }
 }
 
-async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride) {
+async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference) {
   const customAppDir = getResolvedAppDir(installPathOverride);
   const customGameDir = path.join(customAppDir, 'release', 'package', 'game', 'latest');
   const customJreDir = path.join(customAppDir, 'release', 'package', 'jre', 'latest');
@@ -1636,6 +1658,9 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   const waylandEnv = setupWaylandEnvironment();
   Object.assign(env, waylandEnv);
 
+  const gpuEnv = setupGpuEnvironment(gpuPreference);
+  Object.assign(env, gpuEnv);
+
   try {
     let spawnOptions = {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -1723,6 +1748,15 @@ function saveChatUsername(chatUsername) {
 function loadChatUsername() {
   const config = loadConfig();
   return config.chatUsername || '';
+}
+
+function saveGpuPreference(gpuPreference) {
+  saveConfig({ gpuPreference: gpuPreference || 'auto' });
+}
+
+function loadGpuPreference() {
+  const config = loadConfig();
+  return config.gpuPreference || 'auto';
 }
 
 function getUuidForUser(username) {
@@ -2220,5 +2254,7 @@ module.exports = {
   checkExistingGameInstallation,
   proposeGameUpdate,
   handleFirstLaunchCheck,
-  getResolvedAppDir
+  getResolvedAppDir,
+  saveGpuPreference,
+  loadGpuPreference
 };
