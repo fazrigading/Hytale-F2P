@@ -94,7 +94,7 @@ function detectGpu() {
 
         if (line.includes('10de:') || line.toLowerCase().includes('nvidia')) {
           hasNvidia = true;
-          dedicatedName = "Nvidia " + modelName || 'NVIDIA GPU';
+          dedicatedName = "NVIDIA " + modelName || 'NVIDIA GPU';
           console.log('Detected NVIDIA:', dedicatedName);
         } else if (line.includes('1002:') || line.toLowerCase().includes('amd') || line.toLowerCase().includes('radeon')) {
           hasAmd = true;
