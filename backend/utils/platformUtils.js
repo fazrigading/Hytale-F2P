@@ -95,14 +95,14 @@ function detectGpu() {
         if (line.includes('10de:') || line.toLowerCase().includes('nvidia')) {
           hasNvidia = true;
           dedicatedName = "NVIDIA " + modelName || 'NVIDIA GPU';
-          console.log('Detected NVIDIA:', dedicatedName);
+          console.log('Detected NVIDIA GPU:', dedicatedName);
         } else if (line.includes('1002:') || line.toLowerCase().includes('amd') || line.toLowerCase().includes('radeon')) {
           hasAmd = true;
           dedicatedName = "AMD " + modelName || 'AMD GPU';
-          console.log('Detected AMD:', dedicatedName);
+          console.log('Detected AMD GPU:', dedicatedName);
         } else if (line.includes('8086:') || line.toLowerCase().includes('intel')) {
           integratedName = "Intel " + modelName || 'Intel GPU';
-          console.log('Detected Intel:', integratedName);
+          console.log('Detected Intel GPU:', integratedName);
         }
       }
     }
@@ -128,10 +128,9 @@ function setupGpuEnvironment(gpuPreference) {
   }
 
   let finalPreference = gpuPreference;
-  let detected = null;
+  let detected = detectGpu();
 
   if (gpuPreference === 'auto') {
-    detected = detectGpu();
     finalPreference = detected.mode;
     console.log(`Auto-detected GPU: ${detected.vendor} (${detected.mode})`);
   }
@@ -142,7 +141,7 @@ function setupGpuEnvironment(gpuPreference) {
 
   if (finalPreference === 'dedicated') {
     envVars.DRI_PRIME = '1';
-    if (detected && detected.vendor === 'nvidia') {
+    if (detected.vendor === 'nvidia') {
       envVars.__NV_PRIME_RENDER_OFFLOAD = '1';
       envVars.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
       envVars.__GL_SHADER_DISK_CACHE = '1';
