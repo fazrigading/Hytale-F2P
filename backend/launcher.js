@@ -140,7 +140,5 @@ module.exports = {
   checkExistingGameInstallation,
   proposeGameUpdate,
   handleFirstLaunchCheck,
-  
-  // Path functions
   getResolvedAppDir
 };
