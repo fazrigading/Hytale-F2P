@@ -39,7 +39,7 @@ function setupSettingsElements() {
       });
     });
   }
-  }
+}
 
 function toggleCustomJava() {
   if (!customJavaOptions) return;
