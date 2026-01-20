@@ -4,6 +4,7 @@ const fs = require('fs');
 const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, isGameInstalled, uninstallGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
 const UpdateManager = require('./backend/updateManager');
 const logger = require('./backend/logger');
+const profileManager = require('./backend/managers/profileManager');
 
 logger.interceptConsole();
 
@@ -25,16 +26,16 @@ function initDiscordRPC() {
 
     const { Client } = require('discord-rpc');
     discordRPC = new Client({ transport: 'ipc' });
-    
+
     discordRPC.on('ready', () => {
       console.log('Discord RPC connected');
       setDiscordActivity();
     });
-    
+
     discordRPC.on('disconnected', () => {
       console.log('Discord RPC disconnected');
     });
-    
+
     discordRPC.login({ clientId: DISCORD_CLIENT_ID }).catch(err => {
       console.log('Failed to connect to Discord:', err.message);
     });
@@ -45,7 +46,7 @@ function initDiscordRPC() {
 
 function setDiscordActivity() {
   if (!discordRPC) return;
-  
+
   try {
     discordRPC.setActivity({
       details: 'Using HytaleF2P',
@@ -66,7 +67,7 @@ function setDiscordActivity() {
 
 function toggleDiscordRPC(enabled) {
   console.log('Toggling Discord RPC:', enabled);
-  
+
   if (enabled && !discordRPC) {
     console.log('Initializing Discord RPC...');
     initDiscordRPC();
@@ -119,11 +120,11 @@ function createWindow() {
       mainWindow.webContents.send('show-update-popup', updateInfo);
     }
   }, 3000);
-   //mainWindow.webContents.openDevTools();
+  //mainWindow.webContents.openDevTools();
 
 
-   mainWindow.webContents.on('devtools-opened', () => {
-   mainWindow.webContents.closeDevTools();
+  mainWindow.webContents.on('devtools-opened', () => {
+    mainWindow.webContents.closeDevTools();
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -174,30 +175,34 @@ app.whenReady().then(async () => {
     global.detectedGpu = { mode: 'integrated', vendor: 'intel' };
   }
 
+
+  // Initialize Profile Manager (runs migration if needed)
+  profileManager.init();
+
   createWindow();
-  
+
   setTimeout(async () => {
     let timeoutReached = false;
-    
+
     const unlockPlayButton = () => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('lock-play-button', false);
       }
     };
-    
+
     const timeoutId = setTimeout(() => {
       timeoutReached = true;
       console.warn('First launch check timeout reached, unlocking play button');
       unlockPlayButton();
     }, 15000);
-    
+
     try {
       console.log('Starting first launch check...');
-      
+
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('lock-play-button', true);
       }
-      
+
       const progressCallback = (message, percent, speed, downloaded, total) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('first-launch-progress', { message, percent, speed, downloaded, total });
@@ -210,20 +215,20 @@ app.whenReady().then(async () => {
           setTimeout(() => reject(new Error('First launch check timeout')), 12000);
         })
       ]);
-      
+
       clearTimeout(timeoutId);
-      
+
       if (timeoutReached) {
         console.log('Timeout already reached, skipping result processing');
         return;
       }
-      
+
       console.log('First launch check result:', firstLaunchResult);
-      
+
       if (mainWindow && !mainWindow.isDestroyed()) {
         if (firstLaunchResult.needsUpdate && firstLaunchResult.existingGame) {
           console.log('Sending show-first-launch-update event...');
-          
+
           setTimeout(() => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('show-first-launch-update', {
@@ -232,10 +237,10 @@ app.whenReady().then(async () => {
               });
             }
           }, 1000);
-          
+
         } else if (firstLaunchResult.isFirstLaunch && !firstLaunchResult.existingGame) {
           console.log('Sending show-first-launch-welcome event...');
-          
+
           setTimeout(() => {
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('show-first-launch-welcome');
@@ -282,9 +287,9 @@ app.on('before-quit', () => {
 
 app.on('window-all-closed', () => {
   console.log('=== LAUNCHER CLOSING ===');
-  
+
   cleanupDiscordRPC();
-  
+
   if (process.platform !== 'darwin') {
     app.quit();
   }
@@ -311,13 +316,13 @@ ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, g
   } catch (error) {
     console.error('Launch error:', error);
     const errorMessage = error.message || error.toString();
-    
+
     if (mainWindow && !mainWindow.isDestroyed()) {
       setTimeout(() => {
         mainWindow.webContents.send('progress-complete');
       }, 2000);
     }
-    
+
     return { success: false, error: errorMessage };
   }
 });
@@ -338,12 +343,12 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath) 
     };
 
     const result = await installGame(playerName, progressCallback, javaPath, installPath);
-    
+
     return result;
   } catch (error) {
     console.error('Install error:', error);
     const errorMessage = error.message || error.toString();
-    
+
     return { success: false, error: errorMessage };
   }
 });
@@ -407,7 +412,7 @@ ipcMain.handle('select-install-path', async () => {
     properties: ['openDirectory'],
     title: 'Select Installation Folder'
   });
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     return result.filePaths[0];
   }
@@ -430,7 +435,7 @@ ipcMain.handle('accept-first-launch-update', async (event, existingGame) => {
     };
 
     const result = await proposeGameUpdate(existingGame, progressCallback);
-    
+
     return result;
   } catch (error) {
     console.error('First launch update error:', error);
@@ -495,7 +500,7 @@ ipcMain.handle('open-game-location', async () => {
   try {
     const { getResolvedAppDir } = require('./backend/launcher');
     const gameDir = path.join(getResolvedAppDir(), 'release', 'package', 'game');
-    
+
     if (fs.existsSync(gameDir)) {
       await shell.openPath(gameDir);
       return { success: true };
@@ -511,9 +516,9 @@ ipcMain.handle('open-game-location', async () => {
 ipcMain.handle('browse-java-path', async () => {
   const isWindows = process.platform === 'win32';
   const isMac = process.platform === 'darwin';
-  
+
   let dialogOptions;
-  
+
   if (isWindows) {
     dialogOptions = {
       properties: ['openFile'],
@@ -542,9 +547,9 @@ ipcMain.handle('browse-java-path', async () => {
       ]
     };
   }
-  
+
   const result = await dialog.showOpenDialog(mainWindow, dialogOptions);
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     return result.filePaths[0];
   }
@@ -667,7 +672,7 @@ ipcMain.handle('select-mod-files', async () => {
       { name: 'All Files', extensions: ['*'] }
     ]
   });
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     return result.filePaths;
   }
@@ -678,9 +683,9 @@ ipcMain.handle('copy-mod-file', async (event, sourcePath, modsPath) => {
   try {
     const fileName = path.basename(sourcePath);
     const destPath = path.join(modsPath, fileName);
-    
+
     fs.copyFileSync(sourcePath, destPath);
-    
+
     return { success: true, fileName };
   } catch (error) {
     console.error('Error copying mod file:', error);
@@ -700,13 +705,13 @@ ipcMain.handle('check-for-updates', async () => {
 ipcMain.handle('open-download-page', async () => {
   try {
     await shell.openExternal(updateManager.getDownloadUrl());
-    
+
     setTimeout(() => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.close();
       }
     }, 1000);
-    
+
     return { success: true };
   } catch (error) {
     console.error('Error opening download page:', error);
@@ -829,7 +834,7 @@ ipcMain.handle('get-recent-logs', async (event, maxLines = 100) => {
   try {
     const logDir = logger.getLogDirectory();
     if (!logDir) return null;
-    
+
     const files = fs.readdirSync(logDir)
       .filter(file => file.startsWith('launcher-') && file.endsWith('.log'))
       .map(file => ({
@@ -838,13 +843,13 @@ ipcMain.handle('get-recent-logs', async (event, maxLines = 100) => {
         mtime: fs.statSync(path.join(logDir, file)).mtime
       }))
       .sort((a, b) => b.mtime - a.mtime);
-    
+
     if (files.length === 0) return null;
-    
+
     const latestLogFile = files[0].path;
     const content = fs.readFileSync(latestLogFile, 'utf8');
     const lines = content.split('\n');
-    
+
     return lines.slice(-maxLines).join('\n');
   } catch (error) {
     console.error('Error reading logs:', error);
@@ -852,3 +857,44 @@ ipcMain.handle('get-recent-logs', async (event, maxLines = 100) => {
   }
 });
 
+
+// Profile Management IPC
+ipcMain.handle('profile-create', async (event, name) => {
+  try {
+    return profileManager.createProfile(name);
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('profile-list', async () => {
+  return profileManager.getProfiles();
+});
+
+ipcMain.handle('profile-get-active', async () => {
+  return profileManager.getActiveProfile();
+});
+
+ipcMain.handle('profile-activate', async (event, id) => {
+  try {
+    return await profileManager.activateProfile(id);
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('profile-delete', async (event, id) => {
+  try {
+    return profileManager.deleteProfile(id);
+  } catch (error) {
+    return { error: error.message };
+  }
+});
+
+ipcMain.handle('profile-update', async (event, id, updates) => {
+  try {
+    return profileManager.updateProfile(id, updates);
+  } catch (error) {
+    return { error: error.message };
+  }
+});
