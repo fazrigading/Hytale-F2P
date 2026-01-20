@@ -20,7 +20,6 @@ const {
   getUuidForUser,
   isFirstLaunch,
   markAsLaunched,
-  CONFIG_FILE,
   // UUID Management
   getCurrentUuid,
   getAllUuidMappings,
@@ -161,7 +160,7 @@ module.exports = {
   checkExistingGameInstallation,
   proposeGameUpdate,
   handleFirstLaunchCheck,
-  
+
   // Path functions
   getResolvedAppDir,
 
