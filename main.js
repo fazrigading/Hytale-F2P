@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, isGameInstalled, uninstallGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
+const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, isGameInstalled, uninstallGame, repairGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
 const UpdateManager = require('./backend/updateManager');
 const logger = require('./backend/logger');
 const profileManager = require('./backend/managers/profileManager');
@@ -120,8 +120,6 @@ function createWindow() {
       mainWindow.webContents.send('show-update-popup', updateInfo);
     }
   }, 3000);
-  //mainWindow.webContents.openDevTools();
-
 
   mainWindow.webContents.on('devtools-opened', () => {
     mainWindow.webContents.closeDevTools();
@@ -311,7 +309,7 @@ ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, g
     };
 
     const result = await launchGameWithVersionCheck(playerName, progressCallback, javaPath, installPath, gpuPreference);
-    
+
     return result;
   } catch (error) {
     console.error('Launch error:', error);
@@ -469,9 +467,31 @@ ipcMain.handle('is-game-installed', async () => {
 ipcMain.handle('uninstall-game', async () => {
   try {
     await uninstallGame();
-    return { success: true };
   } catch (error) {
     console.error('Uninstall error:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('repair-game', async () => {
+  try {
+    const progressCallback = (message, percent, speed, downloaded, total) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const data = {
+          message: message || null,
+          percent: percent !== null && percent !== undefined ? Math.min(100, Math.max(0, percent)) : null,
+          speed: speed !== null && speed !== undefined ? speed : null,
+          downloaded: downloaded !== null && downloaded !== undefined ? downloaded : null,
+          total: total !== null && total !== undefined ? total : null
+        };
+        mainWindow.webContents.send('progress-update', data);
+      }
+    };
+
+    const result = await repairGame(progressCallback);
+    return result;
+  } catch (error) {
+    console.error('Repair error:', error);
     return { success: false, error: error.message };
   }
 });
@@ -850,13 +870,35 @@ ipcMain.handle('get-recent-logs', async (event, maxLines = 100) => {
     const content = fs.readFileSync(latestLogFile, 'utf8');
     const lines = content.split('\n');
 
-    return lines.slice(-maxLines).join('\n');
+    let result = lines.slice(-maxLines).join('\n');
+
+    if (lines.length > maxLines) {
+      const truncatedMsg = `\n--- ⚠️ LOG TRUNCATED: Showing last ${maxLines} lines of ${lines.length}. Open Logs Folder for full history ---\n\n`;
+      return result + truncatedMsg;
+    }
+
+    return result;
   } catch (error) {
     console.error('Error reading logs:', error);
     return null;
   }
 });
 
+
+
+ipcMain.handle('open-logs-folder', async () => {
+  try {
+    const logDir = logger.getLogDirectory();
+    if (logDir && fs.existsSync(logDir)) {
+      await shell.openPath(logDir);
+      return { success: true };
+    }
+    return { success: false, error: 'Logs directory not found' };
+  } catch (error) {
+    console.error('Error opening logs folder:', error);
+    return { success: false, error: error.message };
+  }
+});
 
 // Profile Management IPC
 ipcMain.handle('profile-create', async (event, name) => {

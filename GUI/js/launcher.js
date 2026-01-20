@@ -31,14 +31,6 @@ export function setupLauncher() {
       }
     });
   }
-  if (window.electronAPI && window.electronAPI.onProgressUpdate) {
-    window.electronAPI.onProgressUpdate((data) => {
-      if (!isDownloading) return;
-      if (window.LauncherUI) {
-        window.LauncherUI.updateProgress(data);
-      }
-    });
-  }
 
   // Initial Profile Load
   loadProfiles();
@@ -445,6 +437,49 @@ async function performUninstall() {
   }
 }
 
+export async function repairGame() {
+  showCustomConfirm(
+    'Are you sure you want to repair Hytale? This will reinstall the game files but keep your data (saves, screenshots, etc.).',
+    'Repair Game',
+    async () => {
+      await performRepair();
+    },
+    null,
+    'Repair',
+    'Cancel'
+  );
+}
+
+async function performRepair() {
+  if (window.LauncherUI) window.LauncherUI.showProgress();
+  if (window.LauncherUI) window.LauncherUI.updateProgress({ message: 'Repairing game...' });
+  isDownloading = true;
+
+  try {
+    if (window.electronAPI && window.electronAPI.repairGame) {
+      const result = await window.electronAPI.repairGame();
+
+      if (result.success) {
+        if (window.LauncherUI) {
+          window.LauncherUI.updateProgress({ message: 'Game repaired successfully!' });
+          setTimeout(() => {
+            window.LauncherUI.hideProgress();
+          }, 2000);
+        }
+      } else {
+        throw new Error(result.error || 'Repair failed');
+      }
+    }
+  } catch (error) {
+    if (window.LauncherUI) {
+      window.LauncherUI.updateProgress({ message: `Repair failed: ${error.message}` });
+      setTimeout(() => window.LauncherUI.hideProgress(), 3000);
+    }
+  } finally {
+    isDownloading = false;
+  }
+}
+
 function resetPlayButton() {
   isDownloading = false;
   if (playBtn) {
@@ -537,5 +572,59 @@ async function loadCustomJavaPath() {
 
 window.launch = launch;
 window.uninstallGame = uninstallGame;
+window.repairGame = repairGame;
+
+window.openLogs = async () => {
+  if (window.LauncherUI) {
+    window.LauncherUI.showPage('logs-page');
+    window.LauncherUI.setActiveNav('logs');
+  }
+  await refreshLogs();
+};
+
+window.openLogsFolder = async () => {
+  try {
+    if (window.electronAPI && window.electronAPI.openLogsFolder) {
+      await window.electronAPI.openLogsFolder();
+    }
+  } catch (error) {
+    console.error('Failed to open logs folder:', error);
+  }
+};
+
+window.refreshLogs = async () => {
+  const terminal = document.getElementById('logsTerminal');
+  if (!terminal) return;
+
+  try {
+    if (window.electronAPI && window.electronAPI.getRecentLogs) {
+      // Fetch up to MAX_LOG_LINES lines
+      const logs = await window.electronAPI.getRecentLogs(MAX_LOG_LINES);
+      if (logs) {
+        // Formatting for colors could be done here if needed
+        terminal.textContent = logs;
+        terminal.scrollTop = terminal.scrollHeight;
+      } else {
+        terminal.textContent = 'No logs available.';
+      }
+    }
+  } catch (error) {
+    terminal.textContent = 'Error loading logs: ' + error.message;
+  }
+};
+
+window.copyLogs = () => {
+  const terminal = document.getElementById('logsTerminal');
+  if (terminal) {
+    navigator.clipboard.writeText(terminal.textContent)
+      .then(() => alert('Logs copied to clipboard!'))
+      .catch(err => console.error('Failed to copy logs:', err));
+  }
+};
+
+window.repairGame = repairGame;
+
+// Constants
+const MAX_LOG_LINES = 500;
 
 document.addEventListener('DOMContentLoaded', setupLauncher);

@@ -6,8 +6,9 @@ import './mods.js';
 import './players.js';
 import './chat.js';
 import './settings.js';
+import './logs.js';
 
-window.closeDiscordNotification = function() {
+window.closeDiscordNotification = function () {
   const notification = document.getElementById('discordNotification');
   if (notification) {
     notification.classList.add('hidden');
@@ -24,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!dismissed) {
       setTimeout(() => {
         notification.style.display = 'flex';
-      }, 3000); 
+      }, 3000);
     } else {
       notification.style.display = 'none';
     }
@@ -32,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const originalClose = window.closeDiscordNotification;
-window.closeDiscordNotification = function() {
+window.closeDiscordNotification = function () {
   localStorage.setItem('discordNotificationDismissed', 'true');
   originalClose();
 };

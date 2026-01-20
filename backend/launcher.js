@@ -40,7 +40,8 @@ const {
   installGame,
   uninstallGame,
   updateGameFiles,
-  checkExistingGameInstallation
+  checkExistingGameInstallation,
+  repairGame
 } = require('./managers/gameManager');
 
 const {
@@ -87,13 +88,14 @@ module.exports = {
   // Game launch functions
   launchGame,
   launchGameWithVersionCheck,
-  
+
   // Game installation functions
   installGame,
   isGameInstalled,
   uninstallGame,
   updateGameFiles,
-  
+  repairGame,
+
   // User configuration functions
   saveUsername,
   loadUsername,
@@ -102,16 +104,16 @@ module.exports = {
   saveChatColor,
   loadChatColor,
   getUuidForUser,
-  
+
   // Java configuration functions
   saveJavaPath,
   loadJavaPath,
   getJavaDetection,
-  
+
   // Installation path functions
   saveInstallPath,
   loadInstallPath,
-  
+
   // Discord RPC functions
   saveDiscordRPC,
   loadDiscordRPC,
@@ -124,13 +126,13 @@ module.exports = {
   // Version functions
   getInstalledClientVersion,
   getLatestClientVersion,
-  
+
   // News functions
   getHytaleNews,
-  
+
   // Player ID functions
   getOrCreatePlayerId,
-  
+
   // UUID Management functions
   getCurrentUuid,
   getAllUuidMappings,
@@ -138,7 +140,7 @@ module.exports = {
   generateNewUuid,
   deleteUuidForUser,
   resetCurrentUserUuid,
-  
+
   // Mod management functions
   getModsPath,
   loadInstalledMods,
@@ -147,13 +149,13 @@ module.exports = {
   toggleMod,
   saveModsToConfig,
   loadModsFromConfig,
-  
+
   // UI file management functions
   downloadAndReplaceHomePageUI,
   findHomePageUIPath,
   downloadAndReplaceLogo,
   findLogoPath,
-  
+
   // First launch functions
   isFirstLaunch,
   markAsLaunched,

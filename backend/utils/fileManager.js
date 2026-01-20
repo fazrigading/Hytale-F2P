@@ -4,11 +4,11 @@ const axios = require('axios');
 
 async function downloadFile(url, dest, progressCallback, maxRetries = 3) {
   let lastError = null;
-  
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       console.log(`Download attempt ${attempt + 1}/${maxRetries} for ${url}`);
-      
+
       if (attempt > 0 && progressCallback) {
         progressCallback(`Retry ${attempt}/${maxRetries - 1}...`, null, null, null, null);
         await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Délai progressif
@@ -53,19 +53,19 @@ async function downloadFile(url, dest, progressCallback, maxRetries = 3) {
       response.data.on('data', (chunk) => {
         downloaded += chunk.length;
         const now = Date.now();
-        
+
         // Reset stalled timer on data received
         if (stalledTimeout) {
           clearTimeout(stalledTimeout);
         }
-        
+
         // Set new stalled timer (30 seconds without data = stalled)
         stalledTimeout = setTimeout(() => {
           downloadStalled = true;
           writer.destroy();
           response.data.destroy();
         }, 30000);
-        
+
         if (progressCallback && totalSize > 0 && (now - lastProgressTime > 100)) { // Update every 100ms max
           const percent = Math.min(100, Math.max(0, (downloaded / totalSize) * 100));
           const elapsed = (now - startTime) / 1000;
@@ -97,14 +97,14 @@ async function downloadFile(url, dest, progressCallback, maxRetries = 3) {
             reject(new Error('Download stalled'));
           }
         });
-        
+
         writer.on('error', (error) => {
           if (stalledTimeout) {
             clearTimeout(stalledTimeout);
           }
           reject(error);
         });
-        
+
         response.data.on('error', (error) => {
           if (stalledTimeout) {
             clearTimeout(stalledTimeout);
@@ -119,7 +119,7 @@ async function downloadFile(url, dest, progressCallback, maxRetries = 3) {
     } catch (error) {
       lastError = error;
       console.error(`Download attempt ${attempt + 1} failed:`, error.code || error.message);
-      
+
       // Nettoyer le fichier partiel en cas d'erreur
       if (fs.existsSync(dest)) {
         try {
@@ -128,23 +128,24 @@ async function downloadFile(url, dest, progressCallback, maxRetries = 3) {
           console.warn('Could not cleanup partial file:', cleanupError.message);
         }
       }
-      
+
       // Vérifier si c'est une erreur réseau que l'on peut retry
       const retryableErrors = ['ECONNRESET', 'ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'ESOCKETTIMEDOUT', 'EPROTO'];
-      const isRetryable = retryableErrors.includes(error.code) || 
-                         error.message.includes('timeout') ||
-                         error.message.includes('stalled') ||
-                         (error.response && error.response.status >= 500);
-      
+      const isRetryable = retryableErrors.includes(error.code) ||
+        error.message.includes('timeout') ||
+        error.message.includes('stalled') ||
+        (error.response && error.response.status >= 500);
+
       if (!isRetryable || attempt === maxRetries - 1) {
         console.error(`Non-retryable error or max retries reached: ${error.code || error.message}`);
+
         break;
       }
-      
+
       console.log(`Retryable error detected, will retry in ${2000 * (attempt + 1)}ms...`);
     }
   }
-  
+
   throw new Error(`Download failed after ${maxRetries} attempts. Last error: ${lastError?.code || lastError?.message || 'Unknown error'}`);
 }
 
@@ -152,7 +153,7 @@ function findHomePageUIPath(gameLatest) {
   function searchDirectory(dir) {
     try {
       const items = fs.readdirSync(dir, { withFileTypes: true });
-      
+
       for (const item of items) {
         if (item.isFile() && item.name === 'HomePage.ui') {
           return path.join(dir, item.name);
@@ -165,14 +166,14 @@ function findHomePageUIPath(gameLatest) {
       }
     } catch (error) {
     }
-    
+
     return null;
   }
-  
+
   if (!fs.existsSync(gameLatest)) {
     return null;
   }
-  
+
   return searchDirectory(gameLatest);
 }
 
@@ -180,7 +181,7 @@ function findLogoPath(gameLatest) {
   function searchDirectory(dir) {
     try {
       const items = fs.readdirSync(dir, { withFileTypes: true });
-      
+
       for (const item of items) {
         if (item.isFile() && item.name === 'Logo@2x.png') {
           return path.join(dir, item.name);
@@ -193,14 +194,14 @@ function findLogoPath(gameLatest) {
       }
     } catch (error) {
     }
-    
+
     return null;
   }
-  
+
   if (!fs.existsSync(gameLatest)) {
     return null;
   }
-  
+
   return searchDirectory(gameLatest);
 }
 

@@ -14,7 +14,7 @@ async function downloadPWR(version = 'release', fileName = '4.pwr', progressCall
   const osName = getOS();
   const arch = getArch();
   const url = `https://game-patches.hytale.com/patches/${osName}/${arch}/${version}/0/${fileName}`;
-  
+
   const dest = path.join(cacheDir, fileName);
 
   if (fs.existsSync(dest)) {
@@ -25,7 +25,7 @@ async function downloadPWR(version = 'release', fileName = '4.pwr', progressCall
   console.log('Fetching PWR patch file:', url);
   await downloadFile(url, dest, progressCallback);
   console.log('PWR saved to:', dest);
-  
+
   return dest;
 }
 
@@ -33,9 +33,9 @@ async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir 
   const butlerPath = await installButler(toolsDir);
   const gameLatest = gameDir;
   const stagingDir = path.join(gameLatest, 'staging-temp');
-  
+
   const clientPath = findClientPath(gameLatest);
-  
+
   if (clientPath) {
     console.log('Game files detected, skipping patch installation.');
     return;
@@ -53,11 +53,11 @@ async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir 
   }
 
   console.log('Installing game patch...');
-  
+
   if (!fs.existsSync(butlerPath)) {
     throw new Error(`Butler tool not found at: ${butlerPath}`);
   }
-  
+
   if (!fs.existsSync(pwrFile)) {
     throw new Error(`PWR file not found at: ${pwrFile}`);
   }
@@ -69,7 +69,7 @@ async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir 
     pwrFile,
     gameLatest
   ];
-  
+
   try {
     await new Promise((resolve, reject) => {
       const child = execFile(butlerPath, args, {
@@ -108,7 +108,7 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     console.log(`Updating game files to version: ${newVersion}`);
 
     tempUpdateDir = path.join(gameDir, '..', 'temp_update');
-    
+
     if (fs.existsSync(tempUpdateDir)) {
       fs.rmSync(tempUpdateDir, { recursive: true, force: true });
     }
@@ -117,26 +117,26 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     if (progressCallback) {
       progressCallback('Downloading new game version...', 10, null, null, null);
     }
-    
+
     const pwrFile = await downloadPWR('release', newVersion, progressCallback, cacheDir);
-    
+
     if (progressCallback) {
       progressCallback('Extracting new files...', 50, null, null, null);
     }
-    
+
     await applyPWR(pwrFile, progressCallback, tempUpdateDir, toolsDir);
-    
+
     if (progressCallback) {
       progressCallback('Replacing game files...', 80, null, null, null);
     }
-    
+
     let userDataBackup = null;
     const userDataPath = findUserDataRecursive(gameDir);
-    
+
     if (userDataPath && fs.existsSync(userDataPath)) {
       userDataBackup = path.join(gameDir, '..', 'UserData_backup_' + Date.now());
       console.log(`Backing up UserData from ${userDataPath} to: ${userDataBackup}`);
-      
+
       function copyRecursive(src, dest) {
         const stat = fs.statSync(src);
         if (stat.isDirectory()) {
@@ -151,35 +151,35 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
           fs.copyFileSync(src, dest);
         }
       }
-      
+
       copyRecursive(userDataPath, userDataBackup);
     } else {
       console.log('No UserData folder found in game directory');
     }
-    
+
     if (fs.existsSync(gameDir)) {
       console.log('Removing old game files...');
       fs.rmSync(gameDir, { recursive: true, force: true });
     }
-    
+
     fs.renameSync(tempUpdateDir, gameDir);
-    
+
     const homeUIResult = await downloadAndReplaceHomePageUI(gameDir, progressCallback);
     console.log('HomePage.ui update result after update:', homeUIResult);
-    
+
     const logoResult = await downloadAndReplaceLogo(gameDir, progressCallback);
     console.log('Logo@2x.png update result after update:', logoResult);
-    
+
     if (userDataBackup && fs.existsSync(userDataBackup)) {
       const newUserDataPath = findUserDataPath(gameDir);
       const userDataParent = path.dirname(newUserDataPath);
-      
+
       if (!fs.existsSync(userDataParent)) {
         fs.mkdirSync(userDataParent, { recursive: true });
       }
-      
+
       console.log(`Restoring UserData to: ${newUserDataPath}`);
-      
+
       function copyRecursive(src, dest) {
         const stat = fs.statSync(src);
         if (stat.isDirectory()) {
@@ -194,12 +194,12 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
           fs.copyFileSync(src, dest);
         }
       }
-      
+
       copyRecursive(userDataBackup, newUserDataPath);
     }
-    
+
     console.log(`Game files updated successfully to version: ${newVersion}`);
-    
+
     if (userDataBackup && fs.existsSync(userDataBackup)) {
       try {
         fs.rmSync(userDataBackup, { recursive: true, force: true });
@@ -208,18 +208,18 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
         console.warn('Could not clean up UserData backup:', cleanupError.message);
       }
     }
-    
+
     console.log('Waiting for file system sync...');
-    await new Promise(resolve => setTimeout(resolve, 2000)); 
-    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
     if (progressCallback) {
       progressCallback('Game update completed', 100, null, null, null);
     }
-    
+
     return { success: true, updated: true, version: newVersion };
   } catch (error) {
     console.error('Error updating game files:', error);
-    
+
     if (userDataBackup && fs.existsSync(userDataBackup)) {
       try {
         fs.rmSync(userDataBackup, { recursive: true, force: true });
@@ -228,11 +228,11 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
         console.warn('Could not clean up UserData backup:', cleanupError.message);
       }
     }
-    
+
     if (tempUpdateDir && fs.existsSync(tempUpdateDir)) {
       fs.rmSync(tempUpdateDir, { recursive: true, force: true });
     }
-    
+
     throw new Error(`Failed to update game files: ${error.message}`);
   }
 }
@@ -309,31 +309,31 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
     progressCallback('Fetching game files...', null, null, null, null);
   }
   console.log('Installing game files...');
-  
+
   const latestVersion = await getLatestClientVersion();
   const pwrFile = await downloadPWR('release', latestVersion, progressCallback, customCacheDir);
   await applyPWR(pwrFile, progressCallback, customGameDir, customToolsDir);
-  
+
   const homeUIResult = await downloadAndReplaceHomePageUI(customGameDir, progressCallback);
   console.log('HomePage.ui update result after installation:', homeUIResult);
-  
+
   const logoResult = await downloadAndReplaceLogo(customGameDir, progressCallback);
   console.log('Logo@2x.png update result after installation:', logoResult);
-  
+
   if (progressCallback) {
     progressCallback('Installation complete', 100, null, null, null);
   }
   console.log('Game installation completed successfully');
-  
-  return { 
-    success: true, 
+
+  return {
+    success: true,
     installed: true
   };
 }
 
 async function uninstallGame() {
   const appDir = getResolvedAppDir();
-  
+
   if (!fs.existsSync(appDir)) {
     throw new Error('Game is not installed');
   }
@@ -341,7 +341,7 @@ async function uninstallGame() {
   try {
     fs.rmSync(appDir, { recursive: true, force: true });
     console.log('Game uninstalled successfully - removed entire HytaleF2P folder');
-    
+
     if (fs.existsSync(CONFIG_FILE)) {
       const config = loadConfig();
       delete config.installPath;
@@ -355,25 +355,25 @@ async function uninstallGame() {
 function checkExistingGameInstallation() {
   try {
     const config = loadConfig();
-    
+
     if (!config.installPath || !config.installPath.trim()) {
       return null;
     }
-    
+
     const installPath = config.installPath.trim();
     const gameDir = path.join(installPath, 'HytaleF2P', 'release', 'package', 'game', 'latest');
-    
+
     if (!fs.existsSync(gameDir)) {
       return null;
     }
-    
+
     const clientPath = findClientPath(gameDir);
     if (!clientPath) {
       return null;
     }
-    
+
     const userDataPath = findUserDataRecursive(gameDir);
-    
+
     return {
       gameDir: gameDir,
       clientPath: clientPath,
@@ -387,6 +387,102 @@ function checkExistingGameInstallation() {
   }
 }
 
+async function repairGame(progressCallback) {
+  const appDir = getResolvedAppDir();
+  const gameDir = path.join(appDir, 'release', 'package', 'game', 'latest');
+
+  // Check if game exists
+  if (!fs.existsSync(gameDir)) {
+    throw new Error('Game directory not found. Cannot repair.');
+  }
+
+  // Locate UserData
+  const userDataPath = findUserDataRecursive(gameDir);
+  let userDataBackup = null;
+
+  if (progressCallback) {
+    progressCallback('Backing up user data...', 10, null, null, null);
+  }
+
+  // Backup UserData
+  if (userDataPath && fs.existsSync(userDataPath)) {
+    userDataBackup = path.join(appDir, 'UserData_backup_repair_' + Date.now());
+    console.log(`Backing up UserData during repair from ${userDataPath} to ${userDataBackup}`);
+
+    // Copy function
+    function copyRecursive(src, dest) {
+      const stat = fs.statSync(src);
+      if (stat.isDirectory()) {
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+        fs.readdirSync(src).forEach(child => copyRecursive(path.join(src, child), path.join(dest, child)));
+      } else {
+        fs.copyFileSync(src, dest);
+      }
+    }
+
+    copyRecursive(userDataPath, userDataBackup);
+  }
+
+  if (progressCallback) {
+    progressCallback('Removing old game files...', 30, null, null, null);
+  }
+
+  // Delete Game and Cache Directory
+  console.log('Removing corrupted game files...');
+  fs.rmSync(gameDir, { recursive: true, force: true });
+
+  const cacheDir = path.join(appDir, 'cache');
+  if (fs.existsSync(cacheDir)) {
+    console.log('Clearing cache directory...');
+    fs.rmSync(cacheDir, { recursive: true, force: true });
+  }
+
+  console.log('Reinstalling game files...');
+
+  // Passing null/undefined for overrides to use defaults/saved configs
+  // installGame calls progressCallback internally
+  await installGame('Player', progressCallback);
+
+  // Restore UserData
+  if (userDataBackup && fs.existsSync(userDataBackup)) {
+    if (progressCallback) {
+      progressCallback('Restoring user data...', 90, null, null, null);
+    }
+
+    // installGame creates: path.join(customGameDir, 'Client', 'UserData')
+    const newGameDir = path.join(appDir, 'release', 'package', 'game', 'latest');
+    const newUserDataPath = path.join(newGameDir, 'Client', 'UserData');
+
+    if (!fs.existsSync(newUserDataPath)) {
+      fs.mkdirSync(newUserDataPath, { recursive: true });
+    }
+
+    console.log(`Restoring UserData to ${newUserDataPath}`);
+
+    function copyRecursive(src, dest) {
+      const stat = fs.statSync(src);
+      if (stat.isDirectory()) {
+        if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+        fs.readdirSync(src).forEach(child => copyRecursive(path.join(src, child), path.join(dest, child)));
+      } else {
+        fs.copyFileSync(src, dest);
+      }
+    }
+
+    copyRecursive(userDataBackup, newUserDataPath);
+
+    // Cleanup Backup
+    console.log('Cleaning up repair backup...');
+    fs.rmSync(userDataBackup, { recursive: true, force: true });
+  }
+
+  if (progressCallback) {
+    progressCallback('Repair completed successfully!', 100, null, null, null);
+  }
+
+  return { success: true, repaired: true };
+}
+
 module.exports = {
   downloadPWR,
   applyPWR,
@@ -394,5 +490,9 @@ module.exports = {
   isGameInstalled,
   installGame,
   uninstallGame,
-  checkExistingGameInstallation
+  isGameInstalled,
+  installGame,
+  uninstallGame,
+  checkExistingGameInstallation,
+  repairGame
 };

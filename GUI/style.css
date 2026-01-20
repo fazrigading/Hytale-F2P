@@ -795,6 +795,96 @@ body {
 }
 
 
+.custom-java-hint i {
+    color: #3b82f6;
+}
+
+/* Logs Page Styles */
+.logs-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem 2rem 2rem;
+}
+
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.logs-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logs-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.logs-action-btn {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #d1d5db;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logs-action-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.logs-terminal {
+    flex: 1;
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #e5e7eb;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+
+    /* Custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.log-line {
+    margin-bottom: 0.25rem;
+}
+
+.log-line.error {
+    color: #ef4444;
+}
+
+.log-line.warn {
+    color: #f59e0b;
+}
+
+.log-line.info {
+    color: #3b82f6;
+}
+
+
 .news-section {
     padding: 1rem 2rem;
     flex: 1;

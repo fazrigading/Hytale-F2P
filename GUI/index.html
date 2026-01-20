@@ -55,6 +55,10 @@
                     <i class="fas fa-user"></i>
                     <span class="nav-tooltip">Skins</span>
                 </div>
+                <div class="nav-item" data-page="logs" id="openLogsBtn" onclick="openLogs()">
+                    <i class="fas fa-terminal"></i>
+                    <span class="nav-tooltip">Logs</span>
+                </div>
             </div>
 
 
@@ -279,61 +283,6 @@
                             </div>
 
                             <div class="settings-content">
-                                <div class="settings-section">
-                                    <h3 class="settings-section-title">
-                                        <i class="fas fa-coffee"></i>
-                                        Java Runtime
-                                    </h3>
-
-                                    <div class="settings-option">
-                                        <label class="settings-checkbox">
-                                            <input type="checkbox" id="customJavaCheck" />
-                                            <span class="checkmark"></span>
-                                            <div class="checkbox-content">
-                                                <div class="checkbox-title">Use Custom Java Path</div>
-                                                <div class="checkbox-description">Override the bundled Java runtime with
-                                                    your own installation</div>
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <div id="customJavaOptions" class="custom-java-options" style="display: none;">
-                                        <div class="settings-input-group">
-                                            <label class="settings-input-label">Java Executable Path</label>
-                                            <div class="settings-input-with-button">
-                                                <input type="text" id="customJavaPath" class="settings-input"
-                                                    placeholder="Select Java path..." readonly />
-                                                <button id="browseJavaBtn" class="settings-browse-btn">
-                                                    <i class="fas fa-folder-open"></i>
-                                                    Browse
-                                                </button>
-                                            </div>
-                                            <p class="settings-hint">
-                                                <i class="fas fa-info-circle"></i>
-                                                Select the Java installation folder (supports Windows, Mac, Linux)
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="settings-section">
-                                    <h3 class="settings-section-title">
-                                        <i class="fab fa-discord"></i>
-                                        Discord Integration
-                                    </h3>
-
-                                    <div class="settings-option">
-                                        <label class="settings-checkbox">
-                                            <input type="checkbox" id="discordRPCCheck" checked />
-                                            <span class="checkmark"></span>
-                                            <div class="checkbox-content">
-                                                <div class="checkbox-title">Enable Discord Rich Presence</div>
-                                                <div class="checkbox-description">Show your launcher activity on Discord
-                                                </div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
 
                                 <div class="settings-section">
                                     <h3 class="settings-section-title">
@@ -366,39 +315,39 @@
                                         </div>
                                     </div>
 
-                                    <div class="settings-input-group">
-                                        <label class="settings-input-label">GPU Preference</label>
-                                        <div class="segmented-control">
-                                            <input type="radio" id="gpu-auto" name="gpuPreference" value="auto" checked>
-                                            <label for="gpu-auto">Auto</label>
-                                            <input type="radio" id="gpu-integrated" name="gpuPreference" value="integrated">
-                                            <label for="gpu-integrated">Integrated</label>
-                                            <input type="radio" id="gpu-dedicated" name="gpuPreference" value="dedicated">
-                                            <label for="gpu-dedicated">Dedicated</label>
-                                        </div>
-                                        <p class="settings-hint">
-                                            <i class="fas fa-info-circle"></i>
-                                            Select your preferred GPU (Linux: affects DRI_PRIME)
-                                        </p>
-                                        <div id="gpu-detection-info" class="gpu-detection-info"></div>
-                                    </div>
-                                </div>
-                                
-                                <div class="settings-section">
-                                    <h3 class="settings-section-title">
-                                        <i class="fab fa-discord"></i>
-                                        Discord Integration
-                                    </h3>
-                                    
                                     <div class="settings-option">
-                                        <label class="settings-checkbox">
-                                            <input type="checkbox" id="discordRPCCheck" checked />
-                                            <span class="checkmark"></span>
-                                            <div class="checkbox-content">
-                                                <div class="checkbox-title">Enable Discord Rich Presence</div>
-                                                <div class="checkbox-description">Show your launcher activity on Discord</div>
+                                        <div class="settings-button-group">
+                                            <button id="repairGameBtn" class="settings-action-btn"
+                                                onclick="repairGame()">
+                                                <i class="fas fa-tools"></i>
+                                                <div class="btn-content">
+                                                    <div class="btn-title">Repair Game</div>
+                                                    <div class="btn-description">Reinstall game files (preserves data)
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </div>
+
+
+                                        <div class="settings-input-group">
+                                            <label class="settings-input-label">GPU Preference</label>
+                                            <div class="segmented-control">
+                                                <input type="radio" id="gpu-auto" name="gpuPreference" value="auto"
+                                                    checked>
+                                                <label for="gpu-auto">Auto</label>
+                                                <input type="radio" id="gpu-integrated" name="gpuPreference"
+                                                    value="integrated">
+                                                <label for="gpu-integrated">Integrated</label>
+                                                <input type="radio" id="gpu-dedicated" name="gpuPreference"
+                                                    value="dedicated">
+                                                <label for="gpu-dedicated">Dedicated</label>
                                             </div>
-                                        </label>
+                                            <p class="settings-hint">
+                                                <i class="fas fa-info-circle"></i>
+                                                Select your preferred GPU (Linux: affects DRI_PRIME)
+                                            </p>
+                                            <div id="gpu-detection-info" class="gpu-detection-info"></div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -435,7 +384,8 @@
                                                 <i class="fas fa-list"></i>
                                                 <div class="btn-content">
                                                     <div class="btn-title">Manage All UUIDs</div>
-                                                    <div class="btn-description">View and manage all player UUIDs</div>
+                                                    <div class="btn-description">View and manage all player UUIDs
+                                                    </div>
                                                 </div>
                                             </button>
                                         </div>
@@ -444,32 +394,47 @@
 
                                 <div class="settings-section">
                                     <h3 class="settings-section-title">
+                                        <i class="fab fa-discord"></i>
+                                        Discord Integration
+                                    </h3>
+
+                                    <div class="settings-option">
+                                        <label class="settings-checkbox">
+                                            <input type="checkbox" id="discordRPCCheck" checked />
+                                            <span class="checkmark"></span>
+                                            <div class="checkbox-content">
+                                                <div class="checkbox-title">Enable Discord Rich Presence</div>
+                                                <div class="checkbox-description">Show your launcher activity on Discord
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="settings-section">
+                                    <h3 class="settings-section-title">
                                         <i class="fas fa-coffee"></i>
                                         Java Runtime
                                     </h3>
-                                    
+
                                     <div class="settings-option">
                                         <label class="settings-checkbox">
                                             <input type="checkbox" id="customJavaCheck" />
                                             <span class="checkmark"></span>
                                             <div class="checkbox-content">
                                                 <div class="checkbox-title">Use Custom Java Path</div>
-                                                <div class="checkbox-description">Override the bundled Java runtime with your own installation</div>
+                                                <div class="checkbox-description">Override the bundled Java runtime with
+                                                    your own installation</div>
                                             </div>
                                         </label>
                                     </div>
-                                    
+
                                     <div id="customJavaOptions" class="custom-java-options" style="display: none;">
                                         <div class="settings-input-group">
                                             <label class="settings-input-label">Java Executable Path</label>
                                             <div class="settings-input-with-button">
-                                                <input 
-                                                    type="text" 
-                                                    id="customJavaPath" 
-                                                    class="settings-input" 
-                                                    placeholder="Select Java path..."
-                                                    readonly
-                                                />
+                                                <input type="text" id="customJavaPath" class="settings-input"
+                                                    placeholder="Select Java path..." readonly />
                                                 <button id="browseJavaBtn" class="settings-browse-btn">
                                                     <i class="fas fa-folder-open"></i>
                                                     Browse
@@ -482,7 +447,7 @@
                                         </div>
                                     </div>
                                 </div>
-
+                                
                             </div>
                         </div>
                     </div>
@@ -494,8 +459,32 @@
                             <p>Skin customization coming soon...</p>
                         </div>
                     </div>
+
+                    <div id="logs-page" class="page">
+                        <div class="logs-container">
+                            <div class="logs-header">
+                                <h2 class="logs-title">
+                                    <i class="fas fa-terminal"></i>
+                                    SYSTEM LOGS
+                                </h2>
+                                <div class="logs-actions">
+                                    <button class="logs-action-btn" onclick="copyLogs()">
+                                        <i class="fas fa-copy"></i> Copy
+                                    </button>
+                                    <button class="logs-action-btn" onclick="refreshLogs()">
+                                        <i class="fas fa-sync-alt"></i> Refresh
+                                    </button>
+                                    <button class="logs-action-btn" onclick="openLogsFolder()">
+                                        <i class="fas fa-folder-open"></i> Open Folder
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="logsTerminal" class="logs-terminal">
+                                <div class="text-gray-500 text-center mt-10">Loading logs...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
         </main>
     </div>
 
@@ -741,5 +730,6 @@
 
     <script type="module" src="js/update.js"></script>
 </body>
+
 
 </html>
