@@ -17,7 +17,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm install
       - run: npm ci
       - run: npx electron-builder --linux --publish never
       - uses: actions/upload-artifact@v4
@@ -35,7 +34,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm install
       - run: npm ci
       - run: npx electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
@@ -52,7 +50,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - run: npm install
       - run: npm ci
       - run: npx electron-builder --mac --publish never
       - uses: actions/upload-artifact@v4
@@ -66,7 +63,7 @@ jobs:
   release:
     needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
 
     permissions:
       contents: write
@@ -83,10 +80,14 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('manual-{0}', github.sha) }}
+          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Manual build {0}', github.sha) }}
           files: |
-            artifacts/linux-builds/*
-            artifacts/windows-builds/*
-            artifacts/macos-builds/*
+            artifacts/linux-builds/**/*
+            artifacts/windows-builds/**/*
+            artifacts/macos-builds/**/*
           generate_release_notes: true
           draft: false
           prerelease: false
+
+
