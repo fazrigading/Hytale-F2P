@@ -83,15 +83,22 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R artifacts
 
+      - name: Get version from package.json
+        id: pkg_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('release-{0}', github.run_number) }}
-          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Automated Release {0}', github.run_number) }}
+          # If it's a tag, use the tag. 
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}-beta.{1}', steps.pkg_version.outputs.VERSION, github.run_number) }}
+          # If it's the 'release' branch, use 'v2.0.2-beta.run42'
+          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Hytale-F2P v{0} (Beta Build {1})', steps.pkg_version.outputs.VERSION, github.run_number) }}
           files: |
             artifacts/linux-builds/**/*
             artifacts/windows-builds/**/*
             artifacts/macos-builds/**/*
           generate_release_notes: true
           draft: true
-          prerelease: false
+          # DYNAMIC FLAGS: Mark as pre-release ONLY IF it's NOT a tag (meaning it's a branch push)
+          prerelease: ${{ github.ref_type != 'tag' }}
