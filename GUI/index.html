@@ -258,65 +258,6 @@
                             <div class="settings-content">
                                 <div class="settings-section">
                                     <h3 class="settings-section-title">
-                                        <i class="fas fa-coffee"></i>
-                                        Java Runtime
-                                    </h3>
-                                    
-                                    <div class="settings-option">
-                                        <label class="settings-checkbox">
-                                            <input type="checkbox" id="customJavaCheck" />
-                                            <span class="checkmark"></span>
-                                            <div class="checkbox-content">
-                                                <div class="checkbox-title">Use Custom Java Path</div>
-                                                <div class="checkbox-description">Override the bundled Java runtime with your own installation</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    
-                                    <div id="customJavaOptions" class="custom-java-options" style="display: none;">
-                                        <div class="settings-input-group">
-                                            <label class="settings-input-label">Java Executable Path</label>
-                                            <div class="settings-input-with-button">
-                                                <input 
-                                                    type="text" 
-                                                    id="customJavaPath" 
-                                                    class="settings-input" 
-                                                    placeholder="Select Java path..."
-                                                    readonly
-                                                />
-                                                <button id="browseJavaBtn" class="settings-browse-btn">
-                                                    <i class="fas fa-folder-open"></i>
-                                                    Browse
-                                                </button>
-                                            </div>
-                                            <p class="settings-hint">
-                                                <i class="fas fa-info-circle"></i>
-                                                Select the Java installation folder (supports Windows, Mac, Linux)
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="settings-section">
-                                    <h3 class="settings-section-title">
-                                        <i class="fab fa-discord"></i>
-                                        Discord Integration
-                                    </h3>
-                                    
-                                    <div class="settings-option">
-                                        <label class="settings-checkbox">
-                                            <input type="checkbox" id="discordRPCCheck" checked />
-                                            <span class="checkmark"></span>
-                                            <div class="checkbox-content">
-                                                <div class="checkbox-title">Enable Discord Rich Presence</div>
-                                                <div class="checkbox-description">Show your launcher activity on Discord</div>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="settings-section">
-                                    <h3 class="settings-section-title">
                                         <i class="fas fa-gamepad"></i>
                                         Game Options
                                     </h3>
@@ -367,6 +308,24 @@
                                         <div id="gpu-detection-info" class="gpu-detection-info"></div>
                                     </div>
                                 </div>
+                                
+                                <div class="settings-section">
+                                    <h3 class="settings-section-title">
+                                        <i class="fab fa-discord"></i>
+                                        Discord Integration
+                                    </h3>
+                                    
+                                    <div class="settings-option">
+                                        <label class="settings-checkbox">
+                                            <input type="checkbox" id="discordRPCCheck" checked />
+                                            <span class="checkmark"></span>
+                                            <div class="checkbox-content">
+                                                <div class="checkbox-title">Enable Discord Rich Presence</div>
+                                                <div class="checkbox-description">Show your launcher activity on Discord</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
 
                                 <div class="settings-section">
                                     <h3 class="settings-section-title">
@@ -411,6 +370,48 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="settings-section">
+                                    <h3 class="settings-section-title">
+                                        <i class="fas fa-coffee"></i>
+                                        Java Runtime
+                                    </h3>
+                                    
+                                    <div class="settings-option">
+                                        <label class="settings-checkbox">
+                                            <input type="checkbox" id="customJavaCheck" />
+                                            <span class="checkmark"></span>
+                                            <div class="checkbox-content">
+                                                <div class="checkbox-title">Use Custom Java Path</div>
+                                                <div class="checkbox-description">Override the bundled Java runtime with your own installation</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    
+                                    <div id="customJavaOptions" class="custom-java-options" style="display: none;">
+                                        <div class="settings-input-group">
+                                            <label class="settings-input-label">Java Executable Path</label>
+                                            <div class="settings-input-with-button">
+                                                <input 
+                                                    type="text" 
+                                                    id="customJavaPath" 
+                                                    class="settings-input" 
+                                                    placeholder="Select Java path..."
+                                                    readonly
+                                                />
+                                                <button id="browseJavaBtn" class="settings-browse-btn">
+                                                    <i class="fas fa-folder-open"></i>
+                                                    Browse
+                                                </button>
+                                            </div>
+                                            <p class="settings-hint">
+                                                <i class="fas fa-info-circle"></i>
+                                                Select the Java installation folder (supports Windows, Mac, Linux)
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
                     </div>
