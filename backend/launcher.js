@@ -116,7 +116,7 @@ module.exports = {
   saveDiscordRPC,
   loadDiscordRPC,
   
-  // GPU configuration functions
+  // GPU Preference functions
   saveGpuPreference,
   loadGpuPreference,
   detectGpu,
@@ -162,10 +162,5 @@ module.exports = {
   handleFirstLaunchCheck,
 
   // Path functions
-  getResolvedAppDir,
-
-  // GPU Preference functions
-  saveGpuPreference,
-  loadGpuPreference,
-  detectGpu
+  getResolvedAppDir
 };
