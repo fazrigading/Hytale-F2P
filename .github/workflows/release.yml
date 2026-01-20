@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     branches:
-      - main
+      - release
     tags:
       - 'v*'
   workflow_dispatch:
@@ -25,6 +25,9 @@ jobs:
           path: |
             dist/*.AppImage
             dist/*.deb
+            dist/*.snap
+            dist/*.rpm
+            dist/*.pacman
 
   build-windows:
     runs-on: windows-latest
@@ -63,7 +66,10 @@ jobs:
   release:
     needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: |
+      startsWith(github.ref, 'refs/tags/v') || 
+      github.ref == 'refs/heads/release' || 
+      github.event_name == 'workflow_dispatch'
 
     permissions:
       contents: write
@@ -80,14 +86,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('manual-{0}', github.sha) }}
-          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Manual build {0}', github.sha) }}
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('release-{0}', github.run_number) }}
+          name: ${{ github.ref_type == 'tag' && github.ref_name || format('Automated Release {0}', github.run_number) }}
           files: |
             artifacts/linux-builds/**/*
             artifacts/windows-builds/**/*
             artifacts/macos-builds/**/*
           generate_release_notes: true
-          draft: false
+          draft: true
           prerelease: false
-
-
