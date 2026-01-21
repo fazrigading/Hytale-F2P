@@ -85,6 +85,10 @@ jobs:
       contents: write
 
     steps:
+      # FIX: './package.json' Module Not Found in `Get version` step
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
