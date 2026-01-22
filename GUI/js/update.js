@@ -23,6 +23,10 @@ class ClientUpdateManager {
             this.showUpdateDownloaded(updateInfo);
         });
 
+        window.electronAPI.onUpdateError((errorInfo) => {
+            this.handleUpdateError(errorInfo);
+        });
+
         this.checkForUpdatesOnDemand();
     }
 
@@ -57,6 +61,10 @@ class ClientUpdateManager {
                     <div class="update-popup-message">
                         A new version of Hytale F2P Launcher is available.<br>
                         <span id="update-status-text">Downloading update automatically...</span>
+                        <div id="update-error-message" style="display: none; margin-top: 0.75rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 0.5rem; color: #fca5a5; font-size: 0.875rem;">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+                            <span id="update-error-text"></span>
+                        </div>
                     </div>
 
                     <div id="update-progress-container" style="display: none; margin-bottom: 1rem;">
@@ -161,7 +169,6 @@ class ClientUpdateManager {
         const progressPercent = document.getElementById('update-progress-percent');
         const progressSpeed = document.getElementById('update-progress-speed');
         const progressSize = document.getElementById('update-progress-size');
-        const statusText = document.getElementById('update-status-text');
 
         if (progressBar && progress) {
             const percent = Math.round(progress.percent || 0);
@@ -182,9 +189,7 @@ class ClientUpdateManager {
                 progressSize.textContent = `${transferredMB} MB / ${totalMB} MB`;
             }
 
-            if (statusText) {
-                statusText.textContent = `Downloading update... ${percent}%`;
-            }
+            // Don't update status text here - it's already set and the progress bar shows the percentage
         }
     }
 
@@ -206,6 +211,83 @@ class ClientUpdateManager {
         }
 
         console.log('✅ Update downloaded, ready to install');
+    }
+
+    handleUpdateError(errorInfo) {
+        console.error('Update error:', errorInfo);
+        
+        // If manual download is required, update the UI (this will handle status text)
+        if (errorInfo.requiresManualDownload) {
+            this.showManualDownloadRequired(errorInfo);
+            return; // Don't do anything else, showManualDownloadRequired handles everything
+        }
+        
+        // For non-critical errors, just show error message without changing status
+        const errorMessage = document.getElementById('update-error-message');
+        const errorText = document.getElementById('update-error-text');
+        
+        if (errorMessage && errorText) {
+            let message = errorInfo.message || 'An error occurred during the update process.';
+            if (errorInfo.isMacSigningError) {
+                message = 'Auto-update requires code signing. Please download manually.';
+            }
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+    }
+
+    showManualDownloadRequired(errorInfo) {
+        const statusText = document.getElementById('update-status-text');
+        const progressContainer = document.getElementById('update-progress-container');
+        const buttonsContainer = document.getElementById('update-buttons-container');
+        const installBtn = document.getElementById('update-install-btn');
+        const downloadBtn = document.getElementById('update-download-btn');
+        const errorMessage = document.getElementById('update-error-message');
+        const errorText = document.getElementById('update-error-text');
+
+        // Hide progress and install button
+        if (progressContainer) {
+            progressContainer.style.display = 'none';
+        }
+
+        if (installBtn) {
+            installBtn.style.display = 'none';
+        }
+
+        // Update status message (only once, don't change it again)
+        if (statusText && !statusText.dataset.manualMode) {
+            statusText.textContent = 'Please download and install the update manually.';
+            statusText.dataset.manualMode = 'true'; // Mark that we've set manual mode
+        }
+
+        // Show error message with details
+        if (errorMessage && errorText) {
+            let message = 'Auto-update is not available. ';
+            if (errorInfo.isMacSigningError) {
+                message = 'This app requires code signing for automatic updates.';
+            } else if (errorInfo.message) {
+                message = errorInfo.message;
+            } else {
+                message = 'An error occurred during the update process.';
+            }
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Show and enable the manual download button (make it primary since it's the only option)
+        if (downloadBtn) {
+            downloadBtn.style.display = 'block';
+            downloadBtn.disabled = false;
+            downloadBtn.classList.remove('update-download-btn-secondary');
+            downloadBtn.innerHTML = '<i class="fas fa-external-link-alt" style="margin-right: 0.5rem;"></i>Download Update Manually';
+        }
+
+        // Show buttons container if not already visible
+        if (buttonsContainer) {
+            buttonsContainer.style.display = 'block';
+        }
+
+        console.log('⚠️ Manual download required due to update error');
     }
 
     blockInterface() {

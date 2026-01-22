@@ -60,6 +60,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateDownloaded: (callback) => {
     ipcRenderer.on('update-downloaded', (event, data) => callback(data));
   },
+  onUpdateError: (callback) => {
+    ipcRenderer.on('update-error', (event, data) => callback(data));
+  },
   quitAndInstallUpdate: () => ipcRenderer.invoke('quit-and-install-update'),
   
   getGpuInfo: () => ipcRenderer.invoke('get-gpu-info'),

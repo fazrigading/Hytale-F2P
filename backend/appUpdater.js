@@ -5,6 +5,9 @@ const logger = require('./logger');
 class AppUpdater {
   constructor(mainWindow) {
     this.mainWindow = mainWindow;
+    this.autoUpdateAvailable = true; // Track if auto-update is possible
+    this.updateAvailable = false; // Track if an update was detected
+    this.updateVersion = null; // Store the available update version
     this.setupAutoUpdater();
   }
 
@@ -40,6 +43,10 @@ class AppUpdater {
 
     autoUpdater.on('update-available', (info) => {
       console.log('Update available:', info.version);
+      this.updateAvailable = true;
+      this.updateVersion = info.version;
+      this.autoUpdateAvailable = true; // Reset flag when new update is available
+      
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.mainWindow.webContents.send('update-available', {
           version: info.version,
@@ -68,9 +75,68 @@ class AppUpdater {
 
     autoUpdater.on('error', (err) => {
       console.error('Error in auto-updater:', err);
+      
+      // Check if this is a network error (not critical, don't show UI)
+      const errorMessage = err.message?.toLowerCase() || '';
+      const isNetworkError = errorMessage.includes('err_name_not_resolved') || 
+                            errorMessage.includes('network') || 
+                            errorMessage.includes('connection') ||
+                            errorMessage.includes('timeout') ||
+                            errorMessage.includes('enotfound');
+      
+      if (isNetworkError) {
+        console.warn('Network error in auto-updater - will retry later. Not showing error UI.');
+        return; // Don't show error UI for network issues
+      }
+      
+      // Determine if this is a critical error that prevents auto-update
+      const isCriticalError = this.isCriticalUpdateError(err);
+      
+      if (isCriticalError) {
+        this.autoUpdateAvailable = false;
+        console.warn('Auto-update failed. Manual download required.');
+      }
+      
+      // Handle missing metadata files (platform-specific builds)
+      if (err.code === 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND') {
+        const platform = process.platform === 'darwin' ? 'macOS' : 
+                        process.platform === 'win32' ? 'Windows' : 'Linux';
+        const missingFile = process.platform === 'darwin' ? 'latest-mac.yml' :
+                           process.platform === 'win32' ? 'latest.yml' : 'latest-linux.yml';
+        console.warn(`${platform} update metadata file (${missingFile}) not found in release.`);
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send('update-error', {
+            message: `Update metadata file for ${platform} not found in release. Please download manually.`,
+            code: err.code,
+            requiresManualDownload: true,
+            updateVersion: this.updateVersion,
+            isMissingMetadata: true
+          });
+        }
+        return;
+      }
+      
+      // macOS-specific: Handle unsigned app errors gracefully
+      if (process.platform === 'darwin' && err.code === 2) {
+        console.warn('macOS update error: App may not be code-signed. Auto-update requires code signing.');
+        if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+          this.mainWindow.webContents.send('update-error', {
+            message: 'Auto-update requires code signing. Please download manually from GitHub.',
+            code: err.code,
+            isMacSigningError: true,
+            requiresManualDownload: true,
+            updateVersion: this.updateVersion
+          });
+        }
+        return;
+      }
+      
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.mainWindow.webContents.send('update-error', {
-          message: err.message
+          message: err.message,
+          code: err.code,
+          requiresManualDownload: isCriticalError,
+          updateVersion: this.updateVersion
         });
       }
     });
@@ -104,12 +170,55 @@ class AppUpdater {
     // Check for updates and notify if available
     autoUpdater.checkForUpdatesAndNotify().catch(err => {
       console.error('Failed to check for updates:', err);
+      
+      // Network errors are not critical - just log and continue
+      const errorMessage = err.message?.toLowerCase() || '';
+      const isNetworkError = errorMessage.includes('err_name_not_resolved') || 
+                            errorMessage.includes('network') || 
+                            errorMessage.includes('connection') ||
+                            errorMessage.includes('timeout') ||
+                            errorMessage.includes('enotfound');
+      
+      if (isNetworkError) {
+        console.warn('Network error checking for updates - will retry later. This is not critical.');
+        return; // Don't show error UI for network issues
+      }
+      
+      const isCritical = this.isCriticalUpdateError(err);
+      if (this.mainWindow && !this.mainWindow.isDestroyed() && isCritical) {
+        this.mainWindow.webContents.send('update-error', {
+          message: err.message || 'Failed to check for updates',
+          code: err.code,
+          requiresManualDownload: true
+        });
+      }
     });
   }
 
   checkForUpdates() {
     // Manual check for updates (returns promise)
-    return autoUpdater.checkForUpdates();
+    return autoUpdater.checkForUpdates().catch(err => {
+      console.error('Failed to check for updates:', err);
+      
+      // Network errors are not critical - just return no update available
+      const errorMessage = err.message?.toLowerCase() || '';
+      const isNetworkError = errorMessage.includes('err_name_not_resolved') || 
+                            errorMessage.includes('network') || 
+                            errorMessage.includes('connection') ||
+                            errorMessage.includes('timeout') ||
+                            errorMessage.includes('enotfound');
+      
+      if (isNetworkError) {
+        console.warn('Network error - update check unavailable');
+        return { updateInfo: null }; // Return empty result for network errors
+      }
+      
+      const isCritical = this.isCriticalUpdateError(err);
+      if (isCritical) {
+        this.autoUpdateAvailable = false;
+      }
+      throw err;
+    });
   }
 
   quitAndInstall() {
@@ -122,6 +231,59 @@ class AppUpdater {
       currentVersion: app.getVersion(),
       updateAvailable: false
     };
+  }
+
+  isCriticalUpdateError(err) {
+    // Check for errors that prevent auto-update
+    const errorMessage = err.message?.toLowerCase() || '';
+    const errorCode = err.code;
+    
+    // Missing update metadata files (platform-specific)
+    if (errorCode === 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' || 
+        errorMessage.includes('cannot find latest') ||
+        errorMessage.includes('latest-linux.yml') ||
+        errorMessage.includes('latest-mac.yml') ||
+        errorMessage.includes('latest.yml')) {
+      return true;
+    }
+    
+    // macOS code signing errors
+    if (process.platform === 'darwin' && (errorCode === 2 || errorMessage.includes('shipit'))) {
+      return true;
+    }
+    
+    // Download failures
+    if (errorMessage.includes('download') && errorMessage.includes('fail')) {
+      return true;
+    }
+    
+    // Network errors that prevent download (but we handle these separately as non-critical)
+    // Installation errors
+    if (errorMessage.includes('install') && errorMessage.includes('fail')) {
+      return true;
+    }
+    
+    // Permission errors
+    if (errorMessage.includes('permission') || errorMessage.includes('access denied')) {
+      return true;
+    }
+    
+    // File system errors (but not "not found" for metadata files - handled above)
+    if (errorMessage.includes('enoent') || errorMessage.includes('cannot find')) {
+      // Only if it's not about metadata files
+      if (!errorMessage.includes('latest') && !errorMessage.includes('.yml')) {
+        return true;
+      }
+    }
+    
+    // Generic critical error codes
+    if (errorCode && (errorCode >= 100 || 
+                      errorCode === 'ERR_UPDATER_INVALID_RELEASE_FEED' ||
+                      errorCode === 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND')) {
+      return true;
+    }
+    
+    return false;
   }
 }
 
