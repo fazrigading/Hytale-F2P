@@ -1,19 +1,36 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const fs = require('fs');
-const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, saveLanguage, loadLanguage, isGameInstalled, uninstallGame, repairGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
-const AppUpdater = require('./backend/appUpdater');
+const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, saveLanguage, loadLanguage, saveCloseLauncherOnStart, loadCloseLauncherOnStart, isGameInstalled, uninstallGame, repairGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
+
+const UpdateManager = require('./backend/updateManager');
 const logger = require('./backend/logger');
 const profileManager = require('./backend/managers/profileManager');
 
 logger.interceptConsole();
 
+// Single instance lock
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log('Another instance is already running. Quitting...');
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
+
 let mainWindow;
-let appUpdater;
+let updateManager;
 let discordRPC = null;
 
 // Discord Rich Presence setup
-const DISCORD_CLIENT_ID = '1462244937868513373';
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 
 function initDiscordRPC() {
   try {
@@ -80,19 +97,47 @@ function toggleDiscordRPC(enabled) {
       console.log('Discord RPC disconnected successfully');
     } catch (error) {
       console.error('Error disconnecting Discord RPC:', error.message);
-      discordRPC = null; // Force null même en cas d'erreur
+      discordRPC = null; 
     }
   }
+}
+
+function createSplashScreen() {
+  const splashWindow = new BrowserWindow({
+    width: 500,
+    height: 350,
+    frame: false,
+    transparent: true,
+    alwaysOnTop: true,
+    resizable: false,
+    skipTaskbar: true,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  splashWindow.loadFile('GUI/splash.html');
+  splashWindow.center();
+
+  // close splash after 2.5s , need to implement a files check or whatever. just mock for now 
+  setTimeout(() => {
+    splashWindow.close();
+    createWindow();
+  }, 2500);
 }
 
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 720,
+    minWidth: 900,
+    minHeight: 600,
     frame: false,
-    resizable: false,
+    resizable: true,
     alwaysOnTop: false,
     backgroundColor: '#090909',
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -104,6 +149,10 @@ function createWindow() {
 
   mainWindow.loadFile('GUI/index.html');
 
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+  });
+
   // Cleanup Discord RPC when window is closed
   mainWindow.on('closed', () => {
     console.log('Main window closed, cleaning up Discord RPC...');
@@ -113,13 +162,11 @@ function createWindow() {
   // Initialize Discord Rich Presence
   initDiscordRPC();
 
-  // Initialize App Updater
-  appUpdater = new AppUpdater(mainWindow);
-  
-  // Check for updates after a short delay (3 seconds)
-  setTimeout(() => {
-    if (appUpdater) {
-      appUpdater.checkForUpdatesAndNotify();
+  updateManager = new UpdateManager();
+  setTimeout(async () => {
+    const updateInfo = await updateManager.checkForUpdates();
+    if (updateInfo.updateAvailable) {
+      mainWindow.webContents.send('show-update-popup', updateInfo);
     }
   }, 3000);
 
@@ -143,7 +190,18 @@ function createWindow() {
     if (input.key === 'F5') {
       event.preventDefault();
     }
+
+    // Close application shortcuts
+    const isMac = process.platform === 'darwin';
+    const quitShortcut = (isMac && input.meta && input.key.toLowerCase() === 'q') || 
+                         (!isMac && input.control && input.key.toLowerCase() === 'q') ||
+                         (!isMac && input.alt && input.key === 'F4');
+
+    if (quitShortcut) {
+      app.quit();
+    }
   });
+
 
 
   mainWindow.webContents.on('context-menu', (e) => {
@@ -154,7 +212,9 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  const packageJson = require('./package.json');
   console.log('=== HYTALE F2P LAUNCHER STARTED ===');
+  console.log('Launcher version:', packageJson.version);
   console.log('Platform:', process.platform);
   console.log('Architecture:', process.arch);
   console.log('Electron version:', process.versions.electron);
@@ -179,7 +239,7 @@ app.whenReady().then(async () => {
   // Initialize Profile Manager (runs migration if needed)
   profileManager.init();
 
-  createWindow();
+  createSplashScreen();
 
   setTimeout(async () => {
     let timeoutReached = false;
@@ -290,10 +350,9 @@ app.on('window-all-closed', () => {
 
   cleanupDiscordRPC();
 
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
+
 
 ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, gpuPreference) => {
   try {
@@ -312,7 +371,18 @@ ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, g
 
     const result = await launchGameWithVersionCheck(playerName, progressCallback, javaPath, installPath, gpuPreference);
 
+    if (result.success && result.launched) {
+      const closeOnStart = loadCloseLauncherOnStart();
+      if (closeOnStart) {
+        console.log('Close Launcher on start enabled, quitting application...');
+        setTimeout(() => {
+          app.quit();
+        }, 1000);
+      }
+    }
+
     return result;
+
   } catch (error) {
     console.error('Launch error:', error);
     const errorMessage = error.message || error.toString();
@@ -329,6 +399,11 @@ ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, g
 
 ipcMain.handle('install-game', async (event, playerName, javaPath, installPath) => {
   try {
+    // Signal installation start
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('installation-start');
+    }
+
     const progressCallback = (message, percent, speed, downloaded, total) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         const data = {
@@ -344,10 +419,20 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath) 
 
     const result = await installGame(playerName, progressCallback, javaPath, installPath);
 
+    // Signal installation end
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('installation-end');
+    }
+
     return result;
   } catch (error) {
     console.error('Install error:', error);
     const errorMessage = error.message || error.toString();
+
+    // Signal installation end on error too
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('installation-end');
+    }
 
     return { success: false, error: errorMessage };
   }
@@ -416,7 +501,17 @@ ipcMain.handle('load-language', () => {
   return loadLanguage();
 });
 
+ipcMain.handle('save-close-launcher', (event, enabled) => {
+  saveCloseLauncherOnStart(enabled);
+  return { success: true };
+});
+
+ipcMain.handle('load-close-launcher', () => {
+  return loadCloseLauncherOnStart();
+});
+
 ipcMain.handle('select-install-path', async () => {
+
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory'],
     title: 'Select Installation Folder'
@@ -628,6 +723,10 @@ ipcMain.handle('get-local-app-data', async () => {
   return process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
 });
 
+ipcMain.handle('get-env-var', async (event, key) => {
+  return process.env[key];
+});
+
 ipcMain.handle('get-user-id', async () => {
   try {
     const { getOrCreatePlayerId } = require('./backend/launcher');
@@ -726,61 +825,21 @@ ipcMain.handle('copy-mod-file', async (event, sourcePath, modsPath) => {
 
 ipcMain.handle('check-for-updates', async () => {
   try {
-    if (appUpdater) {
-      const result = await appUpdater.checkForUpdates();
-      const currentVersion = app.getVersion();
-      const remoteVersion = result?.updateInfo?.version;
-      
-      // Only show update if remote version is actually newer than current
-      const updateAvailable = remoteVersion && 
-                             remoteVersion !== currentVersion && 
-                             isVersionNewer(remoteVersion, currentVersion);
-      
-      return {
-        updateAvailable: updateAvailable,
-        version: remoteVersion,
-        newVersion: remoteVersion,
-        currentVersion: currentVersion
-      };
-    }
-    return { updateAvailable: false, error: 'AppUpdater not initialized' };
+    return await updateManager.checkForUpdates();
   } catch (error) {
     console.error('Error checking for updates:', error);
     return { updateAvailable: false, error: error.message };
   }
 });
 
-// Helper function to compare semantic versions
-function isVersionNewer(version1, version2) {
-  // Simple semantic version comparison
-  // Remove any non-numeric suffixes for comparison
-  const v1Parts = version1.replace(/[^0-9.]/g, '').split('.').map(Number);
-  const v2Parts = version2.replace(/[^0-9.]/g, '').split('.').map(Number);
-  
-  // Pad arrays to same length
-  const maxLength = Math.max(v1Parts.length, v2Parts.length);
-  while (v1Parts.length < maxLength) v1Parts.push(0);
-  while (v2Parts.length < maxLength) v2Parts.push(0);
-  
-  // Compare each part
-  for (let i = 0; i < maxLength; i++) {
-    if (v1Parts[i] > v2Parts[i]) return true;
-    if (v1Parts[i] < v2Parts[i]) return false;
-  }
-  
-  return false; // Versions are equal
-}
-
 ipcMain.handle('open-download-page', async () => {
   try {
-    // Open GitHub releases page
-    await shell.openExternal('https://github.com/amiayweb/Hytale-F2P/releases');
+    await shell.openExternal(updateManager.getDownloadUrl());
 
     setTimeout(() => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.close();
-      }
+      app.quit();
     }, 1000);
+
 
     return { success: true };
   } catch (error) {
@@ -789,24 +848,8 @@ ipcMain.handle('open-download-page', async () => {
   }
 });
 
-ipcMain.handle('quit-and-install-update', async () => {
-  try {
-    if (appUpdater) {
-      appUpdater.quitAndInstall();
-      return { success: true };
-    }
-    return { success: false, error: 'AppUpdater not initialized' };
-  } catch (error) {
-    console.error('Error installing update:', error);
-    return { success: false, error: error.message };
-  }
-});
-
 ipcMain.handle('get-update-info', async () => {
-  if (appUpdater) {
-    return appUpdater.getUpdateInfo();
-  }
-  return { currentVersion: app.getVersion(), updateAvailable: false };
+  return updateManager.getUpdateInfo();
 });
 
 ipcMain.handle('get-gpu-info', () => {
@@ -839,15 +882,29 @@ ipcMain.handle('get-detected-gpu', () => {
 });
 
 ipcMain.handle('window-close', () => {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.close();
-  }
+  app.quit();
 });
+
 
 ipcMain.handle('window-minimize', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.minimize();
   }
+});
+
+ipcMain.handle('window-maximize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.handle('get-version', () => {
+  const packageJson = require('./package.json');
+  return packageJson.version;
 });
 
 ipcMain.handle('get-log-directory', () => {
