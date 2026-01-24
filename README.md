@@ -181,6 +181,8 @@ This project follows **strict semantic versioning** with **numerical versions on
 - [**@chasem-dev**](https://github.com/chasem-dev) - *Issues fixer*
 - [**@crimera**](https://github.com/crimera) - *Issues fixer*  
 - [**@Citeli-py**](https://github.com/Citeli-py) - *Issues fixer*
+- [**@Rahul-Sahani04**](https://github.com/Rahul-Sahani04) - *Issues fixer*
+- [**@xSamiVS**](https://github.com/xSamiVS) - *Language Translator*
 
 ---
 
