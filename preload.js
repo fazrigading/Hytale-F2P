@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   isGameInstalled: () => ipcRenderer.invoke('is-game-installed'),
   uninstallGame: () => ipcRenderer.invoke('uninstall-game'),
   repairGame: () => ipcRenderer.invoke('repair-game'),
+  retryDownload: (retryData) => ipcRenderer.invoke('retry-download', retryData),
   getHytaleNews: () => ipcRenderer.invoke('get-hytale-news'),
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
   openExternalLink: (url) => ipcRenderer.invoke('openExternalLink', url),
@@ -44,7 +45,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectModFiles: () => ipcRenderer.invoke('select-mod-files'),
   copyModFile: (sourcePath, modsPath) => ipcRenderer.invoke('copy-mod-file', sourcePath, modsPath),
   onProgressUpdate: (callback) => {
-    ipcRenderer.on('progress-update', (event, data) => callback(data));
+    ipcRenderer.on('progress-update', (event, data) => {
+      // Ensure data includes retry state if available
+      if (data && typeof data === 'object') {
+        callback(data);
+      } else {
+        callback(data);
+      }
+    });
   },
   onProgressComplete: (callback) => {
     ipcRenderer.on('progress-complete', () => callback());

@@ -255,9 +255,9 @@ app.whenReady().then(async () => {
         mainWindow.webContents.send('lock-play-button', true);
       }
 
-      const progressCallback = (message, percent, speed, downloaded, total) => {
+      const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('first-launch-progress', { message, percent, speed, downloaded, total });
+          mainWindow.webContents.send('first-launch-progress', { message, percent, speed, downloaded, total, retryState });
         }
       };
 
@@ -348,14 +348,15 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, gpuPreference) => {
   try {
-    const progressCallback = (message, percent, speed, downloaded, total) => {
+    const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         const data = {
           message: message || null,
           percent: percent !== null && percent !== undefined ? Math.min(100, Math.max(0, percent)) : null,
           speed: speed !== null && speed !== undefined ? speed : null,
           downloaded: downloaded !== null && downloaded !== undefined ? downloaded : null,
-          total: total !== null && total !== undefined ? total : null
+          total: total !== null && total !== undefined ? total : null,
+          retryState: retryState || null
         };
         mainWindow.webContents.send('progress-update', data);
       }
@@ -398,14 +399,15 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath, 
       mainWindow.webContents.send('installation-start');
     }
 
-    const progressCallback = (message, percent, speed, downloaded, total) => {
+    const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         const data = {
           message: message || null,
           percent: percent !== null && percent !== undefined ? Math.min(100, Math.max(0, percent)) : null,
           speed: speed !== null && speed !== undefined ? speed : null,
           downloaded: downloaded !== null && downloaded !== undefined ? downloaded : null,
-          total: total !== null && total !== undefined ? total : null
+          total: total !== null && total !== undefined ? total : null,
+          retryState: retryState || null
         };
         mainWindow.webContents.send('progress-update', data);
       }
@@ -418,17 +420,77 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath, 
       mainWindow.webContents.send('installation-end');
     }
 
-    return result;
+    // Ensure we always return a result for the IPC handler
+    const successResponse = result || { success: true };
+    console.log('[Main] Returning success response for install-game:', successResponse);
+    return successResponse;
   } catch (error) {
     console.error('Install error:', error);
     const errorMessage = error.message || error.toString();
+
+    // Enhanced error data extraction for both download and Butler errors
+    let errorData = {
+      message: errorMessage,
+      error: true,
+      canRetry: true,
+      retryData: null
+    };
+
+    // Handle Butler-specific errors
+    if (error.butlerError) {
+      console.log('[Main] Processing Butler error with retry context');
+      errorData.retryData = {
+        branch: error.branch || 'release',
+        fileName: error.fileName || '4.pwr',
+        cacheDir: error.cacheDir
+      };
+      errorData.canRetry = error.canRetry !== undefined ? error.canRetry : true;
+      
+      // Add Butler-specific error details
+      if (error.stderr) {
+        console.error('[Main] Butler stderr:', error.stderr);
+      }
+      if (error.stdout) {
+        console.log('[Main] Butler stdout:', error.stdout);
+      }
+      if (error.errorCode) {
+        console.log('[Main] Butler error code:', error.errorCode);
+      }
+    }
+    // Handle PWR download errors
+    else if (error.branch && error.fileName) {
+      console.log('[Main] Processing PWR download error with retry context');
+      errorData.retryData = {
+        branch: error.branch,
+        fileName: error.fileName,
+        cacheDir: error.cacheDir
+      };
+      errorData.canRetry = error.canRetry !== undefined ? error.canRetry : true;
+    }
+    // Default fallback for other errors
+    else {
+      console.log('[Main] Processing generic error, creating default retry data');
+      errorData.retryData = {
+        branch: 'release',
+        fileName: '4.pwr'
+      };
+    }
+
+    // Send enhanced error info for retry UI
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      console.log('[Main] Sending error data to renderer:', errorData);
+      mainWindow.webContents.send('progress-update', errorData);
+    }
 
     // Signal installation end on error too
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('installation-end');
     }
 
-    return { success: false, error: errorMessage };
+    // Always return a proper response to prevent timeout
+    const errorResponse = { success: false, error: errorMessage };
+    console.log('[Main] Returning error response for install-game:', errorResponse);
+    return errorResponse;
   }
 });
 
@@ -519,14 +581,15 @@ ipcMain.handle('select-install-path', async () => {
 
 ipcMain.handle('accept-first-launch-update', async (event, existingGame) => {
   try {
-    const progressCallback = (message, percent, speed, downloaded, total) => {
+    const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         const data = {
           message: message || null,
           percent: percent !== null && percent !== undefined ? Math.min(100, Math.max(0, percent)) : null,
           speed: speed !== null && speed !== undefined ? speed : null,
           downloaded: downloaded !== null && downloaded !== undefined ? downloaded : null,
-          total: total !== null && total !== undefined ? total : null
+          total: total !== null && total !== undefined ? total : null,
+          retryState: retryState || null
         };
         mainWindow.webContents.send('first-launch-progress', data);
       }
@@ -575,14 +638,15 @@ ipcMain.handle('uninstall-game', async () => {
 
 ipcMain.handle('repair-game', async () => {
   try {
-    const progressCallback = (message, percent, speed, downloaded, total) => {
+    const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         const data = {
           message: message || null,
           percent: percent !== null && percent !== undefined ? Math.min(100, Math.max(0, percent)) : null,
           speed: speed !== null && speed !== undefined ? speed : null,
           downloaded: downloaded !== null && downloaded !== undefined ? downloaded : null,
-          total: total !== null && total !== undefined ? total : null
+          total: total !== null && total !== undefined ? total : null,
+          retryState: retryState || null
         };
         mainWindow.webContents.send('progress-update', data);
       }
@@ -592,7 +656,72 @@ ipcMain.handle('repair-game', async () => {
     return result;
   } catch (error) {
     console.error('Repair error:', error);
-    return { success: false, error: error.message };
+    const errorMessage = error.message || error.toString();
+    return { success: false, error: errorMessage };
+  }
+});
+
+ipcMain.handle('retry-download', async (event, retryData) => {
+  try {
+    console.log('[IPC] retry-download called with data:', retryData);
+    
+    // Handle null retry data gracefully
+    if (!retryData || !retryData.branch || !retryData.fileName) {
+      console.log('[IPC] Invalid retry data, using defaults');
+      retryData = {
+        branch: 'release',
+        fileName: '4.pwr'
+      };
+    }
+    
+    const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        const data = {
+          message: message || null,
+          percent: percent !== null && percent !== undefined ? Math.min(100, Math.max(0, percent)) : null,
+          speed: speed !== null && speed !== undefined ? speed : null,
+          downloaded: downloaded !== null && downloaded !== undefined ? downloaded : null,
+          total: total !== null && total !== undefined ? total : null,
+          retryState: retryState || null
+        };
+        mainWindow.webContents.send('progress-update', data);
+      }
+    };
+
+    // Extract PWR download info from retryData
+    const branch = retryData.branch;
+    const fileName = retryData.fileName;
+    const cacheDir = retryData.cacheDir;
+    
+    console.log(`[IPC] Retrying PWR download: branch=${branch}, fileName=${fileName}`);
+    
+    // Perform the retry with enhanced context
+    await retryPWRDownload(branch, fileName, progressCallback, cacheDir);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Retry download error:', error);
+    const errorMessage = error.message || error.toString();
+    
+    // Send error update to frontend with context
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const data = {
+        message: errorMessage,
+        error: true,
+        canRetry: true,
+        retryData: {
+          branch: retryData?.branch || 'release',
+          fileName: retryData?.fileName || '4.pwr',
+          cacheDir: retryData?.cacheDir
+        }
+      };
+      mainWindow.webContents.send('progress-update', data);
+    }
+    
+    // Always return a proper response to prevent timeout
+    const errorResponse = { success: false, error: errorMessage };
+    console.log('[Main] Returning error response for retry-download:', errorResponse);
+    return errorResponse;
   }
 });
 
@@ -711,6 +840,7 @@ ipcMain.handle('load-settings', async () => {
 });
 
 const { getModsPath, loadInstalledMods, downloadMod, uninstallMod, toggleMod, getCurrentUuid, getAllUuidMappings, setUuidForUser, generateNewUuid, deleteUuidForUser, resetCurrentUserUuid } = require('./backend/launcher');
+const { retryPWRDownload } = require('./backend/managers/gameManager');
 const os = require('os');
 
 ipcMain.handle('get-local-app-data', async () => {

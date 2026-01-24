@@ -6,6 +6,22 @@ let progressText;
 let progressPercent;
 let progressSpeed;
 let progressSize;
+let progressErrorContainer;
+let progressErrorMessage;
+let progressRetryInfo;
+let progressRetryBtn;
+
+// Download retry state
+let currentDownloadState = {
+    isDownloading: false,
+    canRetry: false,
+    retryData: null,
+    lastError: null,
+    errorType: null,
+    branch: null,
+    fileName: null,
+    cacheDir: null
+};
 
 function showPage(pageId) {
   const pages = document.querySelectorAll('.page');
@@ -144,6 +160,12 @@ function hideProgress() {
 }
 
 function updateProgress(data) {
+  // Handle retry state
+  if (data.retryState) {
+    currentDownloadState.retryData = data.retryState;
+    updateRetryState(data.retryState);
+  }
+
   if (data.message && progressText) {
     progressText.textContent = data.message;
   }
@@ -161,6 +183,82 @@ function updateProgress(data) {
     const totalMB = (data.total / 1024 / 1024).toFixed(2);
     if (progressSpeed) progressSpeed.textContent = `${speedMB} MB/s`;
     if (progressSize) progressSize.textContent = `${downloadedMB} / ${totalMB} MB`;
+  }
+
+  // Handle error states with enhanced categorization
+  // Don't show error during automatic retries - let the retry message display instead
+  if ((data.error || (data.message && data.message.includes('failed'))) && 
+      !(data.retryState && data.retryState.isAutomaticRetry)) {
+    const errorType = categorizeError(data.message);
+    showDownloadError(data.message, data.canRetry, errorType);
+  } else if (data.percent === 100) {
+    hideDownloadError();
+  } else if (data.retryState && data.retryState.isAutomaticRetry) {
+    // Hide any existing error during automatic retries
+    hideDownloadError();
+  }
+}
+
+function updateRetryState(retryState) {
+  if (!progressRetryInfo) return;
+
+  if (retryState.isAutomaticRetry && retryState.automaticStallRetries > 0) {
+    // Show automatic stall retry count
+    progressRetryInfo.textContent = `Auto-retry ${retryState.automaticStallRetries}/3`;
+    progressRetryInfo.style.display = 'block';
+    progressRetryInfo.style.background = 'rgba(255, 193, 7, 0.2)'; // Light orange background for auto-retries
+    progressRetryInfo.style.color = '#ff9800'; // Orange text for auto-retries
+  } else if (retryState.attempts > 1) {
+    // Show manual retry count
+    progressRetryInfo.textContent = `Attempt ${retryState.attempts}/${retryState.maxRetries}`;
+    progressRetryInfo.style.display = 'block';
+    progressRetryInfo.style.background = ''; // Reset background
+    progressRetryInfo.style.color = ''; // Reset color
+  } else {
+    progressRetryInfo.style.display = 'none';
+    progressRetryInfo.style.background = ''; // Reset background
+    progressRetryInfo.style.color = ''; // Reset color
+  }
+}
+
+function showDownloadError(errorMessage, canRetry = true, errorType = 'general') {
+  if (!progressErrorContainer || !progressErrorMessage || !progressRetryBtn) return;
+
+  currentDownloadState.lastError = errorMessage;
+  currentDownloadState.canRetry = canRetry;
+  currentDownloadState.errorType = errorType;
+  
+  // Update retry context if available
+  if (data && data.retryData) {
+    currentDownloadState.branch = data.retryData.branch;
+    currentDownloadState.fileName = data.retryData.fileName;
+    currentDownloadState.cacheDir = data.retryData.cacheDir;
+  }
+
+  // User-friendly error messages
+  const userMessage = getErrorMessage(errorMessage, errorType);
+  progressErrorMessage.textContent = userMessage;
+  progressErrorContainer.style.display = 'block';
+  progressRetryBtn.style.display = canRetry ? 'block' : 'none';
+
+  // Add visual indicators based on error type
+  progressErrorContainer.className = `progress-error-container error-${errorType}`;
+
+  if (progressOverlay) {
+    progressOverlay.classList.add('error-state');
+  }
+}
+
+function hideDownloadError() {
+  if (!progressErrorContainer) return;
+
+  progressErrorContainer.style.display = 'none';
+  currentDownloadState.canRetry = false;
+  currentDownloadState.lastError = null;
+  currentDownloadState.errorType = null;
+
+  if (progressOverlay) {
+    progressOverlay.classList.remove('error-state');
   }
 }
 
@@ -478,9 +576,16 @@ function setupUI() {
   progressPercent = document.getElementById('progressPercent');
   progressSpeed = document.getElementById('progressSpeed');
   progressSize = document.getElementById('progressSize');
+  progressErrorContainer = document.getElementById('progressErrorContainer');
+  progressErrorMessage = document.getElementById('progressErrorMessage');
+  progressRetryInfo = document.getElementById('progressRetryInfo');
+  progressRetryBtn = document.getElementById('progressRetryBtn');
 
   // Setup draggable progress bar
   setupProgressDrag();
+
+  // Setup retry button
+  setupRetryButton();
 
   lockPlayButton(true);
 
@@ -661,6 +766,174 @@ function hideInstallationEffects() {
 function toggleMaximize() {
   if (window.electronAPI && window.electronAPI.maximizeWindow) {
     window.electronAPI.maximizeWindow();
+  }
+}
+
+// Error categorization and user-friendly messages
+function categorizeError(message) {
+  const msg = message.toLowerCase();
+  
+  if (msg.includes('network') || msg.includes('connection') || msg.includes('offline')) {
+    return 'network';
+  } else if (msg.includes('stalled') || msg.includes('timeout')) {
+    return 'stall';
+  } else if (msg.includes('file') || msg.includes('disk')) {
+    return 'file';
+  } else if (msg.includes('permission') || msg.includes('access')) {
+    return 'permission';
+  } else if (msg.includes('server') || msg.includes('5')) {
+    return 'server';
+  } else if (msg.includes('corrupted') || msg.includes('pwr file') || msg.includes('unexpected eof')) {
+    return 'corruption';
+  } else if (msg.includes('butler') || msg.includes('patch installation')) {
+    return 'butler';
+  } else if (msg.includes('space') || msg.includes('full') || msg.includes('device full')) {
+    return 'space';
+  } else if (msg.includes('conflict') || msg.includes('already exists')) {
+    return 'conflict';
+  } else {
+    return 'general';
+  }
+}
+
+function getErrorMessage(technicalMessage, errorType) {
+  // Technical errors go to console, user gets friendly messages
+  console.error(`Download error [${errorType}]:`, technicalMessage);
+  
+  switch (errorType) {
+    case 'network':
+      return 'Network connection lost. Please check your internet connection and retry.';
+    case 'stall':
+      return 'Download stalled due to slow connection. Please retry.';
+    case 'file':
+      return 'Unable to save file. Check disk space and permissions. Please retry.';
+    case 'permission':
+      return 'Permission denied. Check if launcher has write access. Please retry.';
+    case 'server':
+      return 'Server error. Please wait a moment and retry.';
+    case 'corruption':
+      return 'Corrupted PWR file detected. File deleted and will retry.';
+    case 'butler':
+      return 'Patch installation failed. Please retry.';
+    case 'space':
+      return 'Insufficient disk space. Free up space and retry.';
+    case 'conflict':
+      return 'Installation directory conflict. Please retry.';
+    default:
+      return 'Download failed. Please retry.';
+  }
+}
+
+// Connection quality indicator (simplified)
+function updateConnectionQuality(quality) {
+  if (!progressSize) return;
+  
+  const qualityColors = {
+    'Good': '#10b981',
+    'Fair': '#fbbf24', 
+    'Poor': '#f87171'
+  };
+  
+  const color = qualityColors[quality] || '#6b7280';
+  progressSize.style.color = color;
+  
+  // Add subtle quality indicator
+  if (progressSize.dataset.quality !== quality) {
+    progressSize.dataset.quality = quality;
+    progressSize.style.transition = 'color 0.5s ease';
+  }
+}
+
+// Enhanced retry button setup
+function setupRetryButton() {
+  if (!progressRetryBtn) return;
+
+  progressRetryBtn.addEventListener('click', async () => {
+    if (!currentDownloadState.canRetry || currentDownloadState.isDownloading) {
+      return;
+    }
+
+    // Disable retry button during retry
+    progressRetryBtn.disabled = true;
+    progressRetryBtn.textContent = '🔄 Retrying...';
+    progressRetryBtn.classList.add('retrying');
+    currentDownloadState.isDownloading = true;
+
+    try {
+      // Hide error state during retry
+      hideDownloadError();
+      
+      // Reset retry info styling for manual retries
+      if (progressRetryInfo) {
+        progressRetryInfo.style.background = '';
+        progressRetryInfo.style.color = '';
+      }
+      
+      // Update progress text with context-aware message
+      if (progressText) {
+        const contextMessage = getRetryContextMessage();
+        progressText.textContent = contextMessage;
+      }
+
+      // Ensure retry data exists, create defaults if null
+      if (!currentDownloadState.retryData) {
+        currentDownloadState.retryData = {
+          branch: 'release',
+          fileName: '4.pwr'
+        };
+        console.log('[UI] Created default retry data:', currentDownloadState.retryData);
+      }
+
+      // Send retry request to backend
+      if (window.electronAPI && window.electronAPI.retryDownload) {
+        const result = await window.electronAPI.retryDownload(currentDownloadState.retryData);
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Retry failed');
+        }
+      } else {
+        // Fallback for development/testing
+        console.warn('electronAPI.retryDownload not available, simulating retry...');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        throw new Error('Retry API not available');
+      }
+
+    } catch (error) {
+      console.error('Retry failed:', error);
+      const errorType = categorizeError(error.message);
+      showDownloadError(`Retry failed: ${error.message}`, true, errorType);
+      
+      // Reset retry button
+      progressRetryBtn.disabled = false;
+      progressRetryBtn.textContent = '🔄 Retry Download';
+      progressRetryBtn.classList.remove('retrying');
+      currentDownloadState.isDownloading = false;
+    }
+  });
+}
+
+function getRetryContextMessage() {
+  const errorType = currentDownloadState.errorType;
+  
+  switch (errorType) {
+    case 'network':
+      return 'Reconnecting and retrying download...';
+    case 'stall':
+      return 'Resuming stalled download...';
+    case 'server':
+      return 'Waiting for server and retrying...';
+    case 'corruption':
+      return 'Re-downloading corrupted PWR file...';
+    case 'butler':
+      return 'Re-attempting patch installation...';
+    case 'space':
+      return 'Retrying after clearing disk space...';
+    case 'permission':
+      return 'Retrying with corrected permissions...';
+    case 'conflict':
+      return 'Retrying after resolving conflicts...';
+    default:
+      return 'Initiating retry download...';
   }
 }
 

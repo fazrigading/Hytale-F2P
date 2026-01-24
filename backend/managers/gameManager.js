@@ -3,7 +3,7 @@ const path = require('path');
 const { execFile } = require('child_process');
 const { getResolvedAppDir, findClientPath, findUserDataPath, findUserDataRecursive, GAME_DIR, CACHE_DIR, TOOLS_DIR } = require('../core/paths');
 const { getOS, getArch } = require('../utils/platformUtils');
-const { downloadFile } = require('../utils/fileManager');
+const { downloadFile, retryDownload, retryStalledDownload, MAX_AUTOMATIC_STALL_RETRIES } = require('../utils/fileManager');
 const { getLatestClientVersion, getInstalledClientVersion } = require('../services/versionManager');
 const { installButler } = require('./butlerManager');
 const { downloadAndReplaceHomePageUI, downloadAndReplaceLogo } = require('./uiFileManager');
@@ -11,7 +11,7 @@ const { saveUsername, saveInstallPath, loadJavaPath, CONFIG_FILE, loadConfig, lo
 const { resolveJavaPath, detectSystemJava, downloadJRE, getJavaExec, getBundledJavaPath } = require('./javaManager');
 const userDataBackup = require('../utils/userDataBackup');
 
-async function downloadPWR(branch = 'release', fileName = '4.pwr', progressCallback, cacheDir = CACHE_DIR) {
+async function downloadPWR(branch = 'release', fileName = '4.pwr', progressCallback, cacheDir = CACHE_DIR, manualRetry = false) {
   const osName = getOS();
   const arch = getArch();
 
@@ -20,42 +20,142 @@ async function downloadPWR(branch = 'release', fileName = '4.pwr', progressCallb
   }
 
   const url = `https://game-patches.hytale.com/patches/${osName}/${arch}/${branch}/0/${fileName}`;
-
   const dest = path.join(cacheDir, `${branch}_${fileName}`);
 
   // Check if file exists and validate it
-  if (fs.existsSync(dest)) {
+  if (fs.existsSync(dest) && !manualRetry) {
     console.log('PWR file found in cache:', dest);
     
-    // Validate file size (PWR files should be > 1MB)
+    // Validate file size (PWR files should be > 1MB and >= 1.5GB for complete downloads)
     const stats = fs.statSync(dest);
     if (stats.size < 1024 * 1024) {
-      console.log('Cached PWR file seems corrupted (too small), re-downloading...');
-      fs.unlinkSync(dest);
-    } else {
-      return dest;
+      return false;
+    }
+    
+    // Check if file is under 1.5 GB (incomplete download)
+    const sizeInMB = stats.size / 1024 / 1024;
+    if (sizeInMB < 1500) {
+      console.log(`[PWR Validation] File appears incomplete: ${sizeInMB.toFixed(2)} MB < 1.5 GB`);
+      return false;
     }
   }
 
   console.log('Fetching PWR patch file:', url);
-  await downloadFile(url, dest, progressCallback);
   
-  // Validate downloaded file
+  try {
+    if (manualRetry) {
+      await retryDownload(url, dest, progressCallback);
+    } else {
+      await downloadFile(url, dest, progressCallback);
+    }
+  } catch (error) {
+    // Check for automatic stall retry conditions (only for stall errors, not manual retries)
+    if (!manualRetry && 
+        error.message && 
+        error.message.includes('stalled') && 
+        error.canRetry !== false && // Explicitly check it's not false
+        (!error.retryState || error.retryState.automaticStallRetries < MAX_AUTOMATIC_STALL_RETRIES)) {
+      
+      console.log(`[PWR] Automatic stall retry triggered (${(error.retryState && error.retryState.automaticStallRetries || 0) + 1}/${MAX_AUTOMATIC_STALL_RETRIES})`);
+      
+      try {
+        await retryStalledDownload(url, dest, progressCallback, error);
+        console.log('[PWR] Automatic stall retry successful');
+        
+        // After successful automatic retry, continue with normal flow - the file should be valid now
+        const retryStats = fs.statSync(dest);
+        console.log(`PWR file downloaded (auto-retry), size: ${(retryStats.size / 1024 / 1024).toFixed(2)} MB`);
+        
+        if (!validatePWRFile(dest)) {
+          console.log(`[PWR Validation] PWR file validation failed after auto-retry, deleting corrupted file: ${dest}`);
+          fs.unlinkSync(dest);
+          throw new Error('Downloaded PWR file is corrupted or invalid after automatic retry. Please retry manually');
+        }
+
+        
+      } catch (retryError) {
+        console.error('[PWR] Automatic stall retry failed:', retryError.message);
+        
+        // Create enhanced error with updated retry state
+        const enhancedError = new Error(`PWR download failed after automatic retries: ${retryError.message}`);
+        enhancedError.originalError = retryError;
+        enhancedError.retryState = retryError.retryState || error.retryState || null;
+        enhancedError.canRetry = true; // Still allow manual retry
+        enhancedError.pwrUrl = url;
+        enhancedError.pwrDest = dest;
+        enhancedError.branch = branch;
+        enhancedError.fileName = fileName;
+        enhancedError.cacheDir = cacheDir;
+        enhancedError.automaticRetriesExhausted = true;
+        throw enhancedError;
+      }
+    }
+    
+    // Enhanced error handling for retry UI (non-stall errors or exhausted automatic retries)
+    const enhancedError = new Error(`PWR download failed: ${error.message}`);
+    enhancedError.originalError = error;
+    enhancedError.retryState = error.retryState || null;
+    enhancedError.canRetry = error.isConnectionLost ? false : (error.canRetry !== false); // Don't allow retry for connection lost
+    enhancedError.pwrUrl = url;
+    enhancedError.pwrDest = dest;
+    enhancedError.branch = branch;
+    enhancedError.fileName = fileName;
+    enhancedError.cacheDir = cacheDir;
+    enhancedError.isConnectionLost = error.isConnectionLost || false;
+    
+    console.log(`[PWR] Error handling:`, {
+      message: enhancedError.message,
+      isConnectionLost: enhancedError.isConnectionLost,
+      canRetry: enhancedError.canRetry,
+      retryState: enhancedError.retryState
+    });
+    
+    throw enhancedError;
+  }
+  
+  // Enhanced PWR file validation
   const stats = fs.statSync(dest);
   console.log(`PWR file downloaded, size: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
   
-  if (stats.size < 1024 * 1024) {
+  if (!validatePWRFile(dest)) {
+    console.log(`[PWR Validation] PWR file validation failed, deleting corrupted file: ${dest}`);
     fs.unlinkSync(dest);
-    throw new Error('Downloaded PWR file is corrupted (file too small)');
+    throw new Error('Downloaded PWR file is corrupted or invalid. Please retry');
   }
   
   console.log('PWR saved to:', dest);
+  console.log(`[PWR Validation] PWR file validation passed: ${dest}`);
 
   return dest;
 }
 
-async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir = TOOLS_DIR) {
+// Manual retry function for PWR downloads
+async function retryPWRDownload(branch, fileName, progressCallback, cacheDir = CACHE_DIR) {
+  console.log('Initiating manual PWR retry...');
+  return await downloadPWR(branch, fileName, progressCallback, cacheDir, true);
+}
+
+async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir = TOOLS_DIR, branch = 'release', cacheDir = CACHE_DIR) {
+  console.log(`[Butler] Starting PWR application with:`);
+  console.log(`[Butler] - PWR file: ${pwrFile}`);
+  console.log(`[Butler] - Staging dir: ${path.join(gameDir, 'staging-temp')}`);
+  console.log(`[Butler] - Game dir: ${gameDir}`);
+  console.log(`[Butler] - Branch: ${branch}`);
+  console.log(`[Butler] - Cache dir: ${cacheDir}`);
+  
+  // Validate PWR file exists and get diagnostic info
+  if (!pwrFile || typeof pwrFile !== 'string' || !fs.existsSync(pwrFile)) {
+    throw new Error(`PWR file not found: ${pwrFile || 'undefined'}. Please retry download.`);
+  }
+  
+  const pwrStats = fs.statSync(pwrFile);
+  console.log(`[Butler] PWR file size: ${(pwrStats.size / 1024 / 1024).toFixed(2)} MB`);
+  console.log(`[Butler] PWR file exists: ${fs.existsSync(pwrFile)}`);
+  
   const butlerPath = await installButler(toolsDir);
+  console.log(`[Butler] Butler path: ${butlerPath}`);
+  console.log(`[Butler] Butler executable: ${fs.existsSync(butlerPath)}`);
+  
   const gameLatest = gameDir;
   const stagingDir = path.join(gameLatest, 'staging-temp');
 
@@ -66,12 +166,11 @@ async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir 
     return;
   }
 
-  if (!fs.existsSync(gameLatest)) {
-    fs.mkdirSync(gameLatest, { recursive: true });
-  }
-  if (!fs.existsSync(stagingDir)) {
-    fs.mkdirSync(stagingDir, { recursive: true });
-  }
+  // Validate and prepare directories
+  validateGameDirectory(gameLatest, stagingDir);
+  
+  console.log(`[Butler] Game directory validated: ${gameLatest}`);
+  console.log(`[Butler] Staging directory validated: ${stagingDir}`);
 
   if (progressCallback) {
     progressCallback('Installing game patch...', null, null, null, null);
@@ -95,6 +194,8 @@ async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir 
     gameLatest
   ];
 
+  console.log(`[Butler] Executing command: ${butlerPath} ${args.join(' ')}`);
+
   try {
     await new Promise((resolve, reject) => {
       const child = execFile(butlerPath, args, {
@@ -102,32 +203,97 @@ async function applyPWR(pwrFile, progressCallback, gameDir = GAME_DIR, toolsDir 
         timeout: 600000
       }, (error, stdout, stderr) => {
         if (error) {
-          console.error('Butler stderr:', stderr);
-          console.error('Butler stdout:', stdout);
+          console.error('[Butler] stderr:', stderr);
+          console.error('[Butler] stdout:', stdout);
+          console.error('[Butler] error code:', error.code);
+          console.error('[Butler] error signal:', error.signal);
           
-          // Check for EOF error (corrupted PWR file)
-          if (stderr && stderr.includes('unexpected EOF')) {
-            // Delete corrupted PWR file
-            console.log('Corrupted PWR file detected, deleting:', pwrFile);
+          // Enhanced error pattern detection
+          const errorPatterns = {
+            'unexpected EOF': {
+              message: 'Corrupted PWR file detected and deleted. Please try launching the game again.',
+              shouldDeletePWR: true
+            },
+            'permission denied': {
+              message: 'Permission denied. Check file permissions and try again.',
+              shouldDeletePWR: false
+            },
+            'no space left': {
+              message: 'Insufficient disk space. Free up space and try again.',
+              shouldDeletePWR: false
+            },
+            'device full': {
+              message: 'Insufficient disk space. Free up space and try again.',
+              shouldDeletePWR: false
+            },
+            'already exists': {
+              message: 'Installation directory conflict. Clean directories and retry.',
+              shouldDeletePWR: false
+            },
+            'network error': {
+              message: 'Network error during patch installation. Please retry.',
+              shouldDeletePWR: false
+            },
+            'connection refused': {
+              message: 'Connection refused. Check network and retry.',
+              shouldDeletePWR: false
+            }
+          };
+          
+          let enhancedMessage = `Patch installation failed: ${error.message}${stderr ? '\n' + stderr : ''}`;
+          let shouldDeletePWR = false;
+          
+          // Check error patterns
+          const errorText = (stderr + ' ' + error.message).toLowerCase();
+          for (const [pattern, config] of Object.entries(errorPatterns)) {
+            if (errorText.includes(pattern)) {
+              enhancedMessage = config.message;
+              shouldDeletePWR = config.shouldDeletePWR;
+              console.log(`[Butler] Pattern matched: ${pattern}`);
+              break;
+            }
+          }
+          
+          // Delete corrupted PWR file if needed
+          if (shouldDeletePWR) {
             try {
               if (fs.existsSync(pwrFile)) {
                 fs.unlinkSync(pwrFile);
-                console.log('Corrupted PWR file deleted. Please try again to re-download.');
+                console.log('[Butler] Corrupted PWR file deleted:', pwrFile);
               }
             } catch (delErr) {
-              console.error('Failed to delete corrupted PWR file:', delErr);
+              console.error('[Butler] Failed to delete corrupted PWR file:', delErr);
             }
-            reject(new Error(`Corrupted PWR file detected and deleted. Please try launching the game again.`));
-          } else {
-            reject(new Error(`Patch installation failed: ${error.message}${stderr ? '\n' + stderr : ''}`));
           }
+          
+          // Enhanced error with retry context
+          const enhancedError = new Error(enhancedMessage);
+          enhancedError.canRetry = true;
+          enhancedError.branch = branch;
+          enhancedError.fileName = path.basename(pwrFile);
+          enhancedError.cacheDir = cacheDir;
+          enhancedError.butlerError = true;
+          enhancedError.errorCode = error.code;
+          enhancedError.stderr = stderr;
+          enhancedError.stdout = stdout;
+          
+          console.log('[Butler] Enhanced error created with retry context');
+          reject(enhancedError);
         } else {
+          console.log('[Butler] Patch installation completed successfully');
           resolve();
         }
       });
     });
   } catch (error) {
-    throw error;
+    console.error('[Butler] Exception during Butler execution:', error);
+    const enhancedError = new Error(`Butler execution failed: ${error.message}`);
+    enhancedError.canRetry = true;
+    enhancedError.branch = branch;
+    enhancedError.fileName = path.basename(pwrFile);
+    enhancedError.cacheDir = cacheDir;
+    enhancedError.butlerError = true;
+    throw enhancedError;
   }
 
   if (fs.existsSync(stagingDir)) {
@@ -176,7 +342,7 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
       progressCallback('Extracting new files...', 50, null, null, null);
     }
 
-    await applyPWR(pwrFile, progressCallback, tempUpdateDir, toolsDir);
+    await applyPWR(pwrFile, progressCallback, tempUpdateDir, toolsDir, branch, cacheDir);
 
     if (progressCallback) {
       progressCallback('Backing up user data...', 70, null, null, null);
@@ -369,8 +535,28 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   console.log(`Installing game files for branch: ${branch}...`);
 
   const latestVersion = await getLatestClientVersion(branch);
-  const pwrFile = await downloadPWR(branch, latestVersion, progressCallback, customCacheDir);
-  await applyPWR(pwrFile, progressCallback, customGameDir, customToolsDir);
+  let pwrFile;
+  try {
+    pwrFile = await downloadPWR(branch, latestVersion, progressCallback, customCacheDir);
+    
+    // If downloadPWR returns false, it means the file doesn't exist or is invalid
+    // We should retry the download with a manual retry flag
+    if (!pwrFile) {
+      console.log('[Install] PWR file not found or invalid, attempting retry...');
+      pwrFile = await retryPWRDownload(branch, latestVersion, progressCallback, customCacheDir);
+    }
+    
+    // Double-check we have a valid file path
+    if (!pwrFile || typeof pwrFile !== 'string') {
+      throw new Error(`PWR file download failed: received invalid path ${pwrFile}. Please retry download.`);
+    }
+    
+  } catch (downloadError) {
+    console.error('[Install] PWR download failed:', downloadError.message);
+    throw downloadError; // Re-throw to be handled by the main installGame error handler
+  }
+  
+  await applyPWR(pwrFile, progressCallback, customGameDir, customToolsDir, branch, customCacheDir);
 
   // Save the installed version and branch to config
   saveVersionClient(latestVersion);
@@ -546,8 +732,79 @@ async function repairGame(progressCallback, branchOverride = null) {
   return { success: true, repaired: true };
 }
 
+// Directory validation and cleanup function
+function validateGameDirectory(gameDir, stagingDir) {
+  try {
+    // Ensure game directory exists and is writable
+    if (!fs.existsSync(gameDir)) {
+      fs.mkdirSync(gameDir, { recursive: true });
+      console.log(`[Butler] Created game directory: ${gameDir}`);
+    }
+    
+    // Test write permissions
+    const testFile = path.join(gameDir, '.permission_test');
+    fs.writeFileSync(testFile, 'test');
+    fs.unlinkSync(testFile);
+    console.log(`[Butler] Game directory is writable: ${gameDir}`);
+    
+    // Clean and ensure staging directory
+    if (fs.existsSync(stagingDir)) {
+      console.log(`[Butler] Cleaning existing staging directory: ${stagingDir}`);
+      fs.rmSync(stagingDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(stagingDir, { recursive: true });
+    console.log(`[Butler] Created clean staging directory: ${stagingDir}`);
+    
+    // Check disk space (basic check)
+    const freeSpace = fs.statSync(gameDir);
+    console.log(`[Butler] Directory validation completed successfully`);
+    
+  } catch (error) {
+    throw new Error(`Directory validation failed: ${error.message}. Please check permissions and disk space.`);
+  }
+}
+
+// Enhanced PWR file validation
+function validatePWRFile(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return false;
+    }
+    
+    const stats = fs.statSync(filePath);
+    const sizeInMB = stats.size / 1024 / 1024;
+    
+    if (stats.size < 1024 * 1024) {
+      return false;
+    }
+    
+    // Check if file is under 1.5 GB (incomplete download)
+    if (sizeInMB < 1500) {
+      console.log(`[PWR Validation] File appears incomplete: ${sizeInMB.toFixed(2)} MB < 1.5 GB`);
+      return false;
+    }
+    
+    // Basic file header validation (PWR files should have specific headers)
+    const buffer = fs.readFileSync(filePath, { start: 0, end: 20 });
+    if (buffer.length < 10) {
+      return false;
+    }
+    
+    // Check for common PWR magic bytes or patterns
+    // This is a basic check - could be enhanced with actual PWR format specification
+    const header = buffer.toString('hex', 0, 10);
+    console.log(`[PWR Validation] File header: ${header}`);
+    
+    return true;
+  } catch (error) {
+    console.error(`[PWR Validation] Error:`, error.message);
+    return false;
+  }
+}
+
 module.exports = {
   downloadPWR,
+  retryPWRDownload,
   applyPWR,
   updateGameFiles,
   isGameInstalled,

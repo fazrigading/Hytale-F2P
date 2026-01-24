@@ -1780,6 +1780,237 @@ body {
     }
 }
 
+/* Progress Error and Retry Styles */
+.progress-error-container {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(239, 68, 68, 0.3);
+    animation: errorSlideIn 0.3s ease-out;
+}
+
+@keyframes errorSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.progress-error-message {
+    color: #f87171;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+    line-height: 1.4;
+}
+
+.progress-retry-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.progress-retry-info {
+    color: #fbbf24;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    flex: 1;
+}
+
+.progress-retry-btn {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.progress-retry-btn:hover {
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.progress-retry-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+.progress-retry-btn:disabled {
+    background: linear-gradient(135deg, #4b5563, #6b7280);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+/* Progress overlay error state */
+.progress-overlay.error-state {
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.5),
+        0 0 30px rgba(239, 68, 68, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.progress-overlay.error-state #progressBarFill {
+    background: linear-gradient(90deg, #dc2626, #ef4444);
+    animation: errorPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes errorPulse {
+    0%, 100% {
+        opacity: 0.8;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Error type specific styling */
+.progress-error-container.error-network {
+    border-top-color: rgba(59, 130, 246, 0.5);
+}
+
+.progress-error-container.error-network .progress-error-message {
+    color: #60a5fa;
+    text-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+}
+
+.progress-error-container.error-stall {
+    border-top-color: rgba(245, 158, 11, 0.5);
+}
+
+.progress-error-container.error-stall .progress-error-message {
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+}
+
+.progress-error-container.error-file {
+    border-top-color: rgba(239, 68, 68, 0.5);
+}
+
+.progress-error-container.error-file .progress-error-message {
+    color: #f87171;
+    text-shadow: 0 0 8px rgba(248, 113, 113, 0.4);
+}
+
+.progress-error-container.error-permission {
+    border-top-color: rgba(168, 85, 247, 0.5);
+}
+
+.progress-error-container.error-permission .progress-error-message {
+    color: #a855f7;
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+
+.progress-error-container.error-server {
+    border-top-color: rgba(236, 72, 153, 0.5);
+}
+
+.progress-error-container.error-server .progress-error-message {
+    color: #ec4899;
+    text-shadow: 0 0 8px rgba(236, 72, 153, 0.4);
+}
+
+.progress-error-container.error-corruption {
+    border-top-color: rgba(220, 38, 38, 0.8);
+}
+
+.progress-error-container.error-corruption .progress-error-message {
+    color: #dc2626;
+    text-shadow: 0 0 8px rgba(220, 38, 38, 0.6);
+    font-weight: 600;
+}
+
+.progress-error-container.error-butler {
+    border-top-color: rgba(245, 158, 11, 0.5);
+}
+
+.progress-error-container.error-butler .progress-error-message {
+    color: #f59e0b;
+    text-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.progress-error-container.error-space {
+    border-top-color: rgba(168, 85, 247, 0.5);
+}
+
+.progress-error-container.error-space .progress-error-message {
+    color: #a855f7;
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.4);
+}
+
+.progress-error-container.error-conflict {
+    border-top-color: rgba(6, 182, 212, 0.5);
+}
+
+.progress-error-container.error-conflict .progress-error-message {
+    color: #06b6d4;
+    text-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+/* Connection quality indicators */
+.progress-details {
+    transition: all 0.3s ease;
+}
+
+.progress-details #progressSize {
+    transition: color 0.5s ease;
+}
+
+/* Enhanced retry button states */
+.progress-retry-btn.retrying {
+    background: linear-gradient(135deg, #059669, #10b981);
+    animation: retryingPulse 1s ease-in-out infinite;
+}
+
+@keyframes retryingPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+    }
+}
+
+/* Network status indicator (optional future enhancement) */
+.network-status {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.network-status.poor {
+    background: #f87171;
+    box-shadow: 0 0 6px rgba(248, 113, 113, 0.6);
+}
+
+.network-status.fair {
+    background: #fbbf24;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+}
+
 .progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg,

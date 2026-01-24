@@ -602,7 +602,7 @@
         </div>
     </div>
 
-    <div id="progressOverlay" class="progress-overlay" style="display: none;">
+<div id="progressOverlay" class="progress-overlay" style="display: none;">
         <div class="progress-content">
             <div class="progress-info">
                 <span id="progressText" data-i18n="progress.initializing">Initializing...</span>
@@ -614,6 +614,15 @@
             <div class="progress-details">
                 <span id="progressSpeed"></span>
                 <span id="progressSize"></span>
+            </div>
+            <div id="progressErrorContainer" class="progress-error-container" style="display: none;">
+                <div id="progressErrorMessage" class="progress-error-message"></div>
+                <div class="progress-retry-section">
+                    <span id="progressRetryInfo" class="progress-retry-info"></span>
+                    <button id="progressRetryBtn" class="progress-retry-btn" style="display: none;">
+                        🔄 Retry Download
+                    </button>
+                </div>
             </div>
         </div>
     </div>
