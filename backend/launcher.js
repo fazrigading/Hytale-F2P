@@ -33,7 +33,12 @@ const {
   resetCurrentUserUuid,
   // GPU Preference
   saveGpuPreference,
-  loadGpuPreference
+  loadGpuPreference,
+  // Version Management
+  saveVersionClient,
+  loadVersionClient,
+  saveVersionBranch,
+  loadVersionBranch
 } = require('./core/config');
 
 const { getResolvedAppDir, getModsPath } = require('./core/paths');
@@ -138,6 +143,10 @@ module.exports = {
   // Version functions
   getInstalledClientVersion,
   getLatestClientVersion,
+  saveVersionClient,
+  loadVersionClient,
+  saveVersionBranch,
+  loadVersionBranch,
 
   // News functions
   getHytaleNews,

@@ -1,4 +1,4 @@
-# 🎮 Hytale F2P Launcher | Multiplayer Support [Windows, MacOS, Linux]
+# 🎮 Hytale F2P Launcher | Cross-Platform Multiplayer Support 🪟 🍎 🐧
 
 <div align="center">
 
@@ -6,14 +6,16 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
 
-**A modern, cross-platform launcher for Hytale with automatic updates and multiplayer support (all OS supported)**
+**An unofficial cross-platform launcher for Hytale with automatic updates and multiplayer support (all OS supported)**
 
 [![GitHub stars](https://img.shields.io/github/stars/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/network/members)
 
-⭐ **If you find this project useful, please give it a star!** ⭐
+⭐ **If you find this project useful, please give it a STAR!** ⭐
 
-🛑 **Found a problem? Join the Discord: https://discord.gg/gME8rUy3MB** 🛑
+🛑 **Found a problem? Join the Discord and Select #Open-A-Ticket!: https://discord.gg/gME8rUy3MB** 🛑
+
+⚠️ **READ [QUICK START](https://github.com/amiayweb/Hytale-F2P/tree/main?tab=readme-ov-file#-quick-start) before Downloading & Installing the Launcher!** ⚠️
 
 </div>
 
@@ -21,12 +23,20 @@
 ## 📸 Screenshots
 
 <div align="center">
-
-![Hytale F2P Launcher](https://i.imgur.com/9iDuzST.png)
-![Hytale F2P Mods](https://i.imgur.com/NaareIS.png)
-![Hytale F2P News](https://i.imgur.com/n1nEqRS.png)
-![Hytale F2P Chat](https://i.imgur.com/Y4hL3sx.png)
-
+  <h3>Hytale F2P Launcher</h3>
+  <img src="https://i.imgur.com/9iDuzST.png" alt="Hytale F2P Launcher" width="1000">
+  <details>
+    <summary><b>View Mods Preview</b></summary>
+    <img src="https://i.imgur.com/NaareIS.png" alt="Hytale F2P Mods" width="1000">
+  </details>
+  <details>
+    <summary><b>View Latest News</b></summary>
+    <img src="https://i.imgur.com/n1nEqRS.png" alt="Hytale F2P News" width="1000">
+  </details>
+  <details>
+    <summary><b>View Social & Chat</b></summary>
+    <img src="https://i.imgur.com/Y4hL3sx.png" alt="Hytale F2P Chat" width="1000">
+  </details>
 </div>
 
 ---
@@ -49,24 +59,132 @@
 
 ---
 
-## 🚀 Quick Start
+# 🚀 Quick Start
 
-### 📥 Installation
+## 🖥️ System Requirements
 
-#### Windows
-1. Download the latest `Hytale-F2P.exe` from [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases)
-2. Run the installer
-3. Launch from desktop or start menu
+### 🎮 Hytale Hardware Requirements
 
-#### Linux
-See [BUILD.md](BUILD.md) for detailed build instructions or [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases) section.
+Hytale is designed to be accessible while scaling for high-end performance. Below are the [official system requirements for the Early Access](https://hytale.com/news/2025/12/hytale-hardware-requirements) release.
 
-#### macOS  
-See [BUILD.md](BUILD.md) for detailed build instructions or [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases) section.
+<div align="center">
 
-#### 🖥️ How to play online on F2P?
-See [SERVER.md](SERVER.md)
-   
+<table>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>🥉 Minimum (1080p @ 30 FPS)</th>
+      <th>🥈 Recommended (1080p @ 60 FPS)</th>
+      <th>🥇 Best (1440p @ 60 FPS)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><b>🖥️ OS</b></td>
+      <td colspan="3" align="center">
+        Windows 10/11 (64-bit; X64/ARM64) | Linux (x64/ARM64) | macOS (Apple Silicon only)
+        <br />
+        <small><i>⚠️ Note: macOS Intel (x86) is not yet supported <a href="#fn1" id="ref1">1</a></sup></i></small>
+      </td>
+    </tr>
+    <tr>
+      <td><b>⚙️ CPU</b></td>
+      <td>Intel i5-7500 / Ryzen 3 1200 / Apple M1</td>
+      <td>Intel i5-10400 / Ryzen 5 3600 / Apple M2</td>
+      <td>Intel i7-10700K / Ryzen 9 3800X / Apple M3</td>
+    </tr>
+    <tr>
+      <td><b>🧠 RAM</b></td>
+      <td>8GB (Dedicated) / 12GB (iGPU)</td>
+      <td>16 GB</td>
+      <td>32 GB</td>
+    </tr>
+    <tr>
+      <td><b>🎮 GPU</b></td>
+      <td>GTX 900 / RX 400 / UHD 620</td>
+      <td>GTX 1060 / RX 580 / Iris Xe</td>
+      <td>RTX 30 Series / RX 7000 Series</td>
+    </tr>
+    <tr>
+      <td><b>💾 Storage</b></td>
+      <td>20 GB (SATA SSD)</td>
+      <td>20 GB (NVMe SSD)</td>
+      <td>50 GB+ (NVMe SSD)</td>
+    </tr>
+    <tr>
+      <td><b>🌐 Network</b></td>
+      <td>2 Mbit/s</td>
+      <td>8 Mbit/s</td>
+      <td>10+ Mbit/s</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p id="fn1"><sup>1</sup> Hytale did not provide game files for macOS Intel, yet.</p>
+
+
+
+### 🪟 Windows Prequisites
+* **Java JDK 25:** Download via [Adoptium](https://adoptium.net/temurin/releases/?version=25) or [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows)
+* **Latest Visual Studio Redist:** Download via [Microsoft Visual C++ Redistributable](https://aka.ms/vc14/vc_redist.x64.exe) or [All-in-One by Techpowerup](https://www.techpowerup.com/download/visual-c-redistributable-runtime-package-all-in-one/)
+* **ENABLE MULTIPLAYER:** // TODO MULTIPLAYER GUIDE; FIREWALL GUIDE AND SUCH
+
+### 🐧 Linux Prequisites
+
+> [!WARNING]
+> Ubuntu-based Distro like ZorinOS or Pop!_OS or Linux Mint would encounter issues due to UbuntuLTS environment, [check this Discord post](https://discord.com/channels/1462260103951421493/1463662398501027973).
+
+* Install `libpng` package to avoid SDL3_Image error:
+  * `libpng16-16 libpng-dev` for Ubuntu/Debian-based Distro
+  * `libpng libpng-devel` for Fedora/RHEL-based Distro
+  * `libpng` for Arch-based Distro
+
+---
+
+## 📥 Installation
+
+### 🪟 Windows
+1. Make sure you have installed all [**Windows Prequisites**](https://github.com/amiayweb/Hytale-F2P/tree/main?tab=readme-ov-file#-windows-prequisites) above.
+2. Download the latest `Hytale-F2P-Launcher.exe` from [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases/latest/).
+3. Run the EXE.
+4. Launch from Desktop or Start menu.
+
+### 🐧 Linux
+1. Make sure you have installed all [**Linux Prequisites**](https://github.com/amiayweb/Hytale-F2P/tree/main?tab=readme-ov-file#-linux-prequisites) above.
+2. Download the latest `Hytale-F2P-Launcher.AppImage` or any specific-packages in accordance with your distro from [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases/latest/).
+3. Give permission to the file (`chmod +x <filename>`).
+4. Run the file by double-clicking, or via Terminal (`./<filename>`), or find it via Desktop/App Library.
+
+### 🍎 macOS  
+1. Download .DMG file from the from [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases/latest/).
+2. Run the file.
+3. If says "Apple could not verify ...", go to System Settings > Privacy & Security > Scroll to bottom, find "Hytale F2P Launcher" > press Open Anyway.
+4. Alterative: You can also use the .zip. // TODO: NEEDS MORE INFORMATION
+
+--- 
+
+# Server
+
+## Host your Singleplayer Server (Online-Play Feature)
+
+> [!NOTE]
+> You have to play the game to host the server. See Dedicated Server section below if you want to host it without you playing as the host.
+
+1. Open your Singleplayer World
+2. Pause the game (Esc) > select Online Play > Turn on `Allow Other Players to Join` > Set password if needed > Press `Save`.
+3. Check the status `Connected via STUN` or `Connected via UPnP`.
+
+## Dedicated Server
+
+> [!NOTE]
+> Only Hytale-F2P-Server.rar file is needed to set it up on non-playing hardware (such as VPS/server hosting).
+> Only HytaleServer.jar needed to use your "Server" folder made by the launcher to host local dedicated server. 
+> Use services like Playit.gg, Tailscale, Radmin VPN to share UDP connection if setting up router is not possible.
+
+> [!IMPORTANT]
+> See detailed information of setting up a server here: [SERVER.md](SERVER.md)
+
+// TODO: Server.md would be used as a detailed information to avoid confuses)
 
 ---
 
@@ -75,6 +193,8 @@ See [SERVER.md](SERVER.md)
 See [BUILD.md](BUILD.md) for comprehensive build instructions.
 
 ---
+
+// TODO: this part needs to be written in dev notes
 
 ## 📌 Versioning Policy
 
@@ -96,6 +216,7 @@ This project follows **strict semantic versioning** with **numerical versions on
 ---
 
 ## 📋 Changelog
+// TODO: CHANGELOG SHOULD BE IN `CHANGELOG.MD`
 
 ### 🆕 v2.0.2b *(Minor Update: Performance & Utilities)*  
 - 🌎 **Language Translation** — A big welcome for Spanish 🇪🇸 and Portuguese (Brazil) 🇧🇷 players! **Language setting can be found in the bottom part of Settings pane.**
@@ -107,7 +228,7 @@ This project follows **strict semantic versioning** with **numerical versions on
 ### 🆕 v2.0.2a *(Minor Update)*  
 - 🧑‍🚀 **Profiles System** — Added proper profile management: create, switch, and delete profiles. Each profile now has its own **isolated mod list**.  
 - 🔒 **Mod Isolation** — Fixed ModManager so mods are **strictly scoped to the active profile**. Browsing and installing now only affects the selected profile.  
-- 🚨 **Critical Path Fix** — Resolved a macOS bug where mods were being saved to a Windows path (`~/AppData/Local`) instead of `~/Library/Application Support`. Mods now save to the **correct location** and load properly in-game.  
+- 🚨 **Critical Path Fix** — Resolved a macOS bug where mods were being saved to a Windows path (`~/AppData/Local`) instead of `~/Library/Application Support`.
 - 🛡️ **Stability Improvements** — Added an **auto-sync step before every launch** to ensure the physical mods folder always matches the active profile.  
 - 🎨 **UI Enhancements** — Added a **profile selector dropdown** and a **profile management modal**.
   
@@ -170,7 +291,7 @@ This project follows **strict semantic versioning** with **numerical versions on
 </div>
 
 ### 🏆 Project Creator
-- [**@amiayweb**](https://github.com/amiayweb) - *Lead Developer & Project Creator*
+- [**@amiayweb**](https://github.com/amiayweb) - *Lead Developer & Project Creator | Windows*
 - [**@Relyz1993**](https://github.com/Relyz1993) - *Server Helper & Second Developer & Project Creator*
 
 ### 🌟 Contributors  
@@ -226,7 +347,7 @@ This launcher is created for **educational purposes only**.
 
 🛑 **Takedown Policy** - If Hypixel Studios or Hytale requests removal, this project will be taken down immediately.
 
-❤️ **Support Official** - Please support the official game by purchasing it when available.
+❤️ **Support Official** - Please support the official game by **purchasing** it legally when available.
 
 ---
 
@@ -234,7 +355,8 @@ This launcher is created for **educational purposes only**.
 
 **⭐ Star this project if you found it helpful! ⭐**
 
-*Made with ❤️ by [@amiayweb](https://github.com/amiayweb) and the amazing community*
+*Made with ❤️ by [@amiayweb](https://github.com/amiayweb) and the legendary contributors with amazing community*
+
 [![Star History Chart](https://api.star-history.com/svg?repos=amiayweb/Hytale-F2P&type=date&legend=top-left)](https://www.star-history.com/#amiayweb/Hytale-F2P&type=date&legend=top-left)
 </div>
 

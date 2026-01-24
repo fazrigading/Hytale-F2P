@@ -60,6 +60,18 @@ export async function installGame() {
   const playerName = (installPlayerName ? installPlayerName.value.trim() : '') || 'Player';
   const installPath = installPathInput ? installPathInput.value.trim() : '';
   
+  // Récupérer la branche sélectionnée
+  const selectedBranchRadio = document.querySelector('input[name="installBranch"]:checked');
+  const selectedBranch = selectedBranchRadio ? selectedBranchRadio.value : 'release';
+  
+  console.log(`[Install] Installing game with branch: ${selectedBranch}`);
+  
+  // Sauvegarder la branche sélectionnée dans le config
+  if (window.electronAPI && window.electronAPI.saveVersionBranch) {
+    await window.electronAPI.saveVersionBranch(selectedBranch);
+    console.log(`[Install] Branch saved to config: ${selectedBranch}`);
+  }
+  
   if (window.LauncherUI) window.LauncherUI.showProgress();
   isDownloading = true;
   if (installBtn) {
@@ -69,7 +81,7 @@ export async function installGame() {
   
   try {
     if (window.electronAPI && window.electronAPI.installGame) {
-      const result = await window.electronAPI.installGame(playerName, '', installPath);
+      const result = await window.electronAPI.installGame(playerName, '', installPath, selectedBranch);
       
       if (result.success) {
         const successMsg = window.i18n ? window.i18n.t('progress.installationComplete') : 'Installation completed successfully!';

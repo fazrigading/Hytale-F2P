@@ -7,7 +7,7 @@ const { spawn } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const { getResolvedAppDir, findClientPath } = require('../core/paths');
 const { setupWaylandEnvironment, setupGpuEnvironment } = require('../utils/platformUtils');
-const { saveUsername, saveInstallPath, loadJavaPath, getUuidForUser, getAuthServerUrl, getAuthDomain } = require('../core/config');
+const { saveUsername, saveInstallPath, loadJavaPath, getUuidForUser, getAuthServerUrl, getAuthDomain, loadVersionBranch, loadVersionClient, saveVersionClient } = require('../core/config');
 const { resolveJavaPath, getJavaExec, getBundledJavaPath, detectSystemJava, JAVA_EXECUTABLE } = require('./javaManager');
 const { getInstalledClientVersion, getLatestClientVersion } = require('../services/versionManager');
 const { updateGameFiles } = require('./gameManager');
@@ -101,10 +101,11 @@ function generateLocalTokens(uuid, name) {
   };
 }
 
-async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto') {
+async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto', branchOverride = null) {
+  const branch = branchOverride || loadVersionBranch();
   const customAppDir = getResolvedAppDir(installPathOverride);
-  const customGameDir = path.join(customAppDir, 'release', 'package', 'game', 'latest');
-  const customJreDir = path.join(customAppDir, 'release', 'package', 'jre', 'latest');
+  const customGameDir = path.join(customAppDir, branch, 'package', 'game', 'latest');
+  const customJreDir = path.join(customAppDir, branch, 'package', 'jre', 'latest');
   const userDataDir = path.join(customGameDir, 'Client', 'UserData');
 
   const gameLatest = customGameDir;
@@ -151,13 +152,14 @@ async function launchGame(playerName = 'Player', progressCallback, javaPathOverr
   const { identityToken, sessionToken } = await fetchAuthTokens(uuid, playerName);
 
   // Patch client and server binaries to use custom auth server (BEFORE signing on macOS)
+  // FORCE patch on every launch to ensure consistency
   const authDomain = getAuthDomain();
   if (clientPatcher) {
     try {
       if (progressCallback) {
         progressCallback('Patching game for custom server...', null, null, null, null);
       }
-      console.log(`Patching game binaries for ${authDomain}...`);
+      console.log(`Force patching game binaries for ${authDomain}...`);
 
       const patchResult = await clientPatcher.ensureClientPatched(gameLatest, (msg, percent) => {
         console.log(`[Patcher] ${msg}`);
@@ -167,16 +169,12 @@ async function launchGame(playerName = 'Player', progressCallback, javaPathOverr
       });
 
       if (patchResult.success) {
-        if (patchResult.alreadyPatched) {
-          console.log(`Game already patched for ${authDomain}`);
-        } else {
-          console.log(`Game patched successfully (${patchResult.patchCount} total occurrences)`);
-          if (patchResult.client) {
-            console.log(`  Client: ${patchResult.client.patchCount || 0} occurrences`);
-          }
-          if (patchResult.server) {
-            console.log(`  Server: ${patchResult.server.patchCount || 0} occurrences`);
-          }
+        console.log(`Game patched successfully (${patchResult.patchCount} total occurrences)`);
+        if (patchResult.client) {
+          console.log(`  Client: ${patchResult.client.patchCount || 0} occurrences`);
+        }
+        if (patchResult.server) {
+          console.log(`  Server: ${patchResult.server.patchCount || 0} occurrences`);
         }
       } else {
         console.warn('Game patching failed:', patchResult.error);
@@ -355,23 +353,23 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   }
 }
 
-async function launchGameWithVersionCheck(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto') {
+async function launchGameWithVersionCheck(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto', branchOverride = null) {
   try {
+    const branch = branchOverride || loadVersionBranch();
+    
     if (progressCallback) {
       progressCallback('Checking for updates...', 0, null, null, null);
     }
 
-    const [installedVersion, latestVersion] = await Promise.all([
-      getInstalledClientVersion(),
-      getLatestClientVersion()
-    ]);
+    const installedVersion = loadVersionClient();
+    const latestVersion = await getLatestClientVersion(branch);
 
-    console.log(`Installed version: ${installedVersion}, Latest version: ${latestVersion}`);
+    console.log(`Installed version: ${installedVersion}, Latest version: ${latestVersion} (branch: ${branch})`);
 
     let needsUpdate = false;
-    if (installedVersion && latestVersion && installedVersion !== latestVersion) {
+    if (!installedVersion || installedVersion !== latestVersion) {
       needsUpdate = true;
-      console.log('Version mismatch detected, update required');
+      console.log('Version mismatch or not installed, update required');
     }
 
     if (needsUpdate) {
@@ -380,13 +378,13 @@ async function launchGameWithVersionCheck(playerName = 'Player', progressCallbac
       }
 
       const customAppDir = getResolvedAppDir(installPathOverride);
-      const customGameDir = path.join(customAppDir, 'release', 'package', 'game', 'latest');
+      const customGameDir = path.join(customAppDir, branch, 'package', 'game', 'latest');
       const customToolsDir = path.join(customAppDir, 'butler');
       const customCacheDir = path.join(customAppDir, 'cache');
 
       try {
-        await updateGameFiles(latestVersion, progressCallback, customGameDir, customToolsDir, customCacheDir);
-        console.log('Game updated successfully, waiting before launch...');
+        await updateGameFiles(latestVersion, progressCallback, customGameDir, customToolsDir, customCacheDir, branch);
+        console.log('Game updated successfully, patching will be forced on launch...');
 
         if (progressCallback) {
           progressCallback('Preparing game launch...', 90, null, null, null);
@@ -406,7 +404,7 @@ async function launchGameWithVersionCheck(playerName = 'Player', progressCallbac
       progressCallback('Launching game...', 80, null, null, null);
     }
 
-    return await launchGame(playerName, progressCallback, javaPathOverride, installPathOverride, gpuPreference);
+    return await launchGame(playerName, progressCallback, javaPathOverride, installPathOverride, gpuPreference, branch);
   } catch (error) {
     console.error('Error in version check and launch:', error);
     if (progressCallback) {

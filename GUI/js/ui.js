@@ -501,6 +501,7 @@ function setupUI() {
   setupAnimations();
   setupFirstLaunchHandlers();
   loadLauncherVersion();
+  checkGameInstallation();
 
   document.body.focus();
 }
@@ -517,6 +518,50 @@ async function loadLauncherVersion() {
     }
   } catch (error) {
     console.error('Failed to load launcher version:', error);
+  }
+}
+
+// Check game installation status on startup
+async function checkGameInstallation() {
+  try {
+    console.log('Checking game installation status...');
+    
+    // Check if game is installed
+    const isInstalled = await window.electronAPI.isGameInstalled();
+    
+    // Load version_client from config
+    let versionClient = null;
+    if (window.electronAPI.loadVersionClient) {
+      versionClient = await window.electronAPI.loadVersionClient();
+    }
+    
+    console.log(`Game installed: ${isInstalled}, version_client: ${versionClient}`);
+    
+    // If version_client is null and game is not installed, trigger installation
+    if (versionClient === null && !isInstalled) {
+      console.log('Game not installed and version_client is null, showing install page...');
+      
+      // Show installation page
+      const installPage = document.getElementById('install-page');
+      const launcher = document.getElementById('launcher-container');
+      const sidebar = document.querySelector('.sidebar');
+      
+      if (installPage) {
+        installPage.style.display = 'block';
+        if (launcher) launcher.style.display = 'none';
+        if (sidebar) sidebar.style.pointerEvents = 'none';
+        
+        // Unlock play button since we're in install mode
+        lockPlayButton(false);
+      }
+    } else {
+      // Game is installed or version is set, unlock play button
+      lockPlayButton(false);
+    }
+  } catch (error) {
+    console.error('Error checking game installation:', error);
+    // Unlock on error to prevent permanent lock
+    lockPlayButton(false);
   }
 }
 

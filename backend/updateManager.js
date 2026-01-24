@@ -11,6 +11,18 @@ class UpdateManager {
     }
 
     async checkForUpdates() {
+        // Disabled: Using electron-updater for automatic updates instead
+        console.log('Update check skipped - using electron-updater');
+        console.log(`Current version: ${CURRENT_VERSION}`);
+        
+        return {
+            updateAvailable: false,
+            currentVersion: CURRENT_VERSION,
+            newVersion: CURRENT_VERSION,
+            message: 'Using electron-updater for automatic updates'
+        };
+        
+        /* kept for reference
         try {
             console.log('Checking for updates...');
             console.log(`Local version: ${CURRENT_VERSION}`);
@@ -54,6 +66,7 @@ class UpdateManager {
                 currentVersion: CURRENT_VERSION
             };
         }
+        */
     }
 
     getDownloadUrl() {

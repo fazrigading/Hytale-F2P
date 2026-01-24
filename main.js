@@ -397,8 +397,10 @@ ipcMain.handle('launch-game', async (event, playerName, javaPath, installPath, g
   }
 });
 
-ipcMain.handle('install-game', async (event, playerName, javaPath, installPath) => {
+ipcMain.handle('install-game', async (event, playerName, javaPath, installPath, branch) => {
   try {
+    console.log(`[IPC] install-game called with branch: ${branch || 'default'}`);
+    
     // Signal installation start
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('installation-start');
@@ -417,7 +419,7 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath) 
       }
     };
 
-    const result = await installGame(playerName, progressCallback, javaPath, installPath);
+    const result = await installGame(playerName, progressCallback, javaPath, installPath, branch);
 
     // Signal installation end
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -879,6 +881,22 @@ ipcMain.handle('get-detected-gpu', () => {
   const { detectGpu } = require('./backend/launcher');
   global.detectedGpu = detectGpu();
   return global.detectedGpu;
+});
+
+ipcMain.handle('save-version-branch', (event, branch) => {
+  const { saveVersionBranch } = require('./backend/launcher');
+  saveVersionBranch(branch);
+  return { success: true };
+});
+
+ipcMain.handle('load-version-branch', () => {
+  const { loadVersionBranch } = require('./backend/launcher');
+  return loadVersionBranch();
+});
+
+ipcMain.handle('load-version-client', () => {
+  const { loadVersionClient } = require('./backend/launcher');
+  return loadVersionClient();
 });
 
 ipcMain.handle('window-close', () => {

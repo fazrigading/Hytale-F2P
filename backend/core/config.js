@@ -304,6 +304,30 @@ function loadGpuPreference() {
   return config.gpuPreference || 'auto';
 }
 
+function saveVersionClient(versionClient) {
+  saveConfig({ version_client: versionClient });
+}
+
+function loadVersionClient() {
+  const config = loadConfig();
+  return config.version_client !== undefined ? config.version_client : null;
+}
+
+function saveVersionBranch(versionBranch) {
+  const branch = versionBranch || 'release';
+  if (branch !== 'release' && branch !== 'pre-release') {
+    console.warn(`Invalid branch "${branch}", defaulting to "release"`);
+    saveConfig({ version_branch: 'release' });
+  } else {
+    saveConfig({ version_branch: branch });
+  }
+}
+
+function loadVersionBranch() {
+  const config = loadConfig();
+  return config.version_branch || 'release';
+}
+
 module.exports = {
   loadConfig,
   saveConfig,
@@ -343,5 +367,10 @@ module.exports = {
   loadGpuPreference,
   // Close Launcher export
   saveCloseLauncherOnStart,
-  loadCloseLauncherOnStart
+  loadCloseLauncherOnStart,
+  // Version Management exports
+  saveVersionClient,
+  loadVersionClient,
+  saveVersionBranch,
+  loadVersionBranch
 };

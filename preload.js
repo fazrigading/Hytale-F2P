@@ -68,6 +68,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadGpuPreference: () => ipcRenderer.invoke('load-gpu-preference'),
   getDetectedGpu: () => ipcRenderer.invoke('get-detected-gpu'),
 
+  saveVersionBranch: (branch) => ipcRenderer.invoke('save-version-branch', branch),
+  loadVersionBranch: () => ipcRenderer.invoke('load-version-branch'),
+  loadVersionClient: () => ipcRenderer.invoke('load-version-client'),
+
   acceptFirstLaunchUpdate: (existingGame) => ipcRenderer.invoke('accept-first-launch-update', existingGame),
   markAsLaunched: () => ipcRenderer.invoke('mark-as-launched'),
   onFirstLaunchUpdate: (callback) => {

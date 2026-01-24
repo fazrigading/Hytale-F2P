@@ -15,6 +15,9 @@
     "title": "FREE TO PLAY LAUNCHER",
     "playerName": "Player Name",
     "playerNamePlaceholder": "Enter your name",
+    "gameBranch": "Game Version",
+    "releaseVersion": "Release (Stable)",
+    "preReleaseVersion": "Pre-Release (Experimental)",
     "customInstallation": "Custom Installation",
     "installationFolder": "Installation Folder",
     "pathPlaceholder": "Default location",
@@ -125,7 +128,16 @@
     "logsLoading": "Loading logs...",
     "closeLauncher": "Launcher Behavior",
     "closeOnStart": "Close Launcher on game start",
-    "closeOnStartDescription": "Automatically close the launcher after Hytale has launched"
+    "closeOnStartDescription": "Automatically close the launcher after Hytale has launched",
+    "gameBranch": "Game Branch",
+    "branchRelease": "Release",
+    "branchPreRelease": "Pre-Release",
+    "branchHint": "Switch between stable release and experimental pre-release versions",
+    "branchWarning": "Changing branch will download and install a different game version",
+    "branchSwitching": "Switching to {branch}...",
+    "branchSwitched": "Switched to {branch} successfully!",
+    "installRequired": "Installation Required",
+    "branchInstallConfirm": "The game will be installed for the {branch} branch. Continue?"
   },
   "uuid": {
     "modalTitle": "UUID Management",
@@ -157,7 +169,8 @@
     "delete": "Delete",
     "edit": "Edit",
     "loading": "Loading...",
-    "apply": "Apply"
+    "apply": "Apply",
+    "install": "Install"
   },
   "notifications": {
     "gameDataNotFound": "Error: Game data not found",
