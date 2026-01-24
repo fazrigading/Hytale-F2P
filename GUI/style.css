@@ -1815,6 +1815,12 @@ body {
     gap: 0.75rem;
 }
 
+.progress-retry-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
 .progress-retry-info {
     color: #fbbf24;
     font-family: 'JetBrains Mono', monospace;

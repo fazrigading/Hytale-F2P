@@ -3,6 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const fs = require('fs');
 const { launchGame, launchGameWithVersionCheck, installGame, saveUsername, loadUsername, saveChatUsername, loadChatUsername, saveChatColor, loadChatColor, saveJavaPath, loadJavaPath, saveInstallPath, loadInstallPath, saveDiscordRPC, loadDiscordRPC, saveLanguage, loadLanguage, saveCloseLauncherOnStart, loadCloseLauncherOnStart, isGameInstalled, uninstallGame, repairGame, getHytaleNews, handleFirstLaunchCheck, proposeGameUpdate, markAsLaunched } = require('./backend/launcher');
+const { retryPWRDownload } = require('./backend/managers/gameManager');
 
 const logger = require('./backend/logger');
 const profileManager = require('./backend/managers/profileManager');
@@ -430,37 +431,41 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath, 
     console.log('[Main] Returning success response for install-game:', successResponse);
     return successResponse;
   } catch (error) {
-    console.error('Install error:', error);
+    // console.error('Install error:', error);
     const errorMessage = error.message || error.toString();
 
     // Enhanced error data extraction for both download and Butler errors
     let errorData = {
       message: errorMessage,
       error: true,
-      canRetry: true,
+      canRetry: true, // Default to true, will be overridden by specific error props
       retryData: null
     };
 
+    // Prioritize JRE errors first
+    if (error.isJREError) {
+      console.log('[Main] Processing JRE download error with retry context');
+      errorData.retryData = {
+        isJREError: true,
+        jreUrl: error.jreUrl,
+        fileName: error.fileName,
+        cacheDir: error.cacheDir,
+        osName: error.osName,
+        arch: error.arch
+      };
+      // For JRE errors, allow manual retry unless explicitly disabled
+      errorData.canRetry = error.canRetry !== false;
+      errorData.errorType = 'jre';
+    }
     // Handle Butler-specific errors
-    if (error.butlerError) {
+    else if (error.butlerError) {
       console.log('[Main] Processing Butler error with retry context');
       errorData.retryData = {
         branch: error.branch || 'release',
         fileName: error.fileName || '4.pwr',
         cacheDir: error.cacheDir
       };
-      errorData.canRetry = error.canRetry !== undefined ? error.canRetry : true;
-      
-      // Add Butler-specific error details
-      if (error.stderr) {
-        console.error('[Main] Butler stderr:', error.stderr);
-      }
-      if (error.stdout) {
-        console.log('[Main] Butler stdout:', error.stdout);
-      }
-      if (error.errorCode) {
-        console.log('[Main] Butler error code:', error.errorCode);
-      }
+      errorData.canRetry = error.canRetry !== false;
     }
     // Handle PWR download errors
     else if (error.branch && error.fileName) {
@@ -470,7 +475,7 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath, 
         fileName: error.fileName,
         cacheDir: error.cacheDir
       };
-      errorData.canRetry = error.canRetry !== undefined ? error.canRetry : true;
+      errorData.canRetry = error.canRetry !== false;
     }
     // Default fallback for other errors
     else {
@@ -479,6 +484,8 @@ ipcMain.handle('install-game', async (event, playerName, javaPath, installPath, 
         branch: 'release',
         fileName: '4.pwr'
       };
+      // For generic errors, assume it's retryable unless specified
+      errorData.canRetry = error.canRetry !== false;
     }
 
     // Send enhanced error info for retry UI
@@ -636,7 +643,7 @@ ipcMain.handle('uninstall-game', async () => {
   try {
     await uninstallGame();
   } catch (error) {
-    console.error('Uninstall error:', error);
+    // console.error('Uninstall error:', error);
     return { success: false, error: error.message };
   }
 });
@@ -669,16 +676,7 @@ ipcMain.handle('repair-game', async () => {
 ipcMain.handle('retry-download', async (event, retryData) => {
   try {
     console.log('[IPC] retry-download called with data:', retryData);
-    
-    // Handle null retry data gracefully
-    if (!retryData || !retryData.branch || !retryData.fileName) {
-      console.log('[IPC] Invalid retry data, using defaults');
-      retryData = {
-        branch: 'release',
-        fileName: '4.pwr'
-      };
-    }
-    
+
     const progressCallback = (message, percent, speed, downloaded, total, retryState) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         const data = {
@@ -693,14 +691,36 @@ ipcMain.handle('retry-download', async (event, retryData) => {
       }
     };
 
+    // Handle JRE download retries
+    if (retryData && retryData.isJREError) {
+      console.log(`[IPC] Retrying JRE download: jreUrl=${retryData.jreUrl}, fileName=${retryData.fileName}`);
+      console.log('[IPC] Full JRE retry data:', JSON.stringify(retryData, null, 2));
+      
+      const { retryJREDownload } = require('./backend/managers/javaManager');
+      await retryJREDownload(retryData.jreUrl, jreCacheFile, progressCallback);
+      const jreCacheFile = path.join(retryData.cacheDir, retryData.fileName);
+      
+      return { success: true };
+    }
+    
+    // Handle PWR download retries (default)
+    if (!retryData || !retryData.branch || !retryData.fileName) {
+      console.log('[IPC] Invalid retry data, using PWR defaults');
+      retryData = {
+        branch: 'release',
+        fileName: '4.pwr'
+      };
+    }
+    
     // Extract PWR download info from retryData
     const branch = retryData.branch;
     const fileName = retryData.fileName;
     const cacheDir = retryData.cacheDir;
     
     console.log(`[IPC] Retrying PWR download: branch=${branch}, fileName=${fileName}`);
+    console.log('[IPC] Full PWR retry data:', JSON.stringify(retryData, null, 2));
     
-    // Perform the retry with enhanced context
+    // Perform retry with enhanced context
     await retryPWRDownload(branch, fileName, progressCallback, cacheDir);
     
     return { success: true };
@@ -710,15 +730,28 @@ ipcMain.handle('retry-download', async (event, retryData) => {
     
     // Send error update to frontend with context
     if (mainWindow && !mainWindow.isDestroyed()) {
-      const data = {
-        message: errorMessage,
-        error: true,
-        canRetry: true,
-        retryData: {
+      const isJreError = retryData?.isJREError;
+      const errorRetryData = isJreError ?
+        {
+          isJREError: true,
+          jreUrl: retryData?.jreUrl,
+          fileName: retryData?.fileName,
+          cacheDir: retryData?.cacheDir,
+          osName: retryData?.osName,
+          arch: retryData?.arch
+        } :
+        {
           branch: retryData?.branch || 'release',
           fileName: retryData?.fileName || '4.pwr',
           cacheDir: retryData?.cacheDir
-        }
+        };
+        
+      const data = {
+        message: errorMessage,
+        error: true,
+        canRetry: error.canRetry !== false, // Respect canRetry from the thrown error
+        retryData: errorRetryData,
+        errorType: isJreError ? 'jre' : 'general' // Add errorType for the UI
       };
       mainWindow.webContents.send('progress-update', data);
     }
@@ -846,7 +879,6 @@ ipcMain.handle('load-settings', async () => {
 });
 
 const { getModsPath, loadInstalledMods, downloadMod, uninstallMod, toggleMod, getCurrentUuid, getAllUuidMappings, setUuidForUser, generateNewUuid, deleteUuidForUser, resetCurrentUserUuid } = require('./backend/launcher');
-const { retryPWRDownload } = require('./backend/managers/gameManager');
 const os = require('os');
 
 ipcMain.handle('get-local-app-data', async () => {
