@@ -501,7 +501,10 @@ function setupUI() {
   setupAnimations();
   setupFirstLaunchHandlers();
   loadLauncherVersion();
-  checkGameInstallation();
+  checkGameInstallation().catch(err => {
+    console.error('Critical error in checkGameInstallation:', err);
+    lockPlayButton(false);
+  });
 
   document.body.focus();
 }
@@ -526,6 +529,13 @@ async function checkGameInstallation() {
   try {
     console.log('Checking game installation status...');
     
+    // Verify electronAPI is available
+    if (!window.electronAPI || !window.electronAPI.isGameInstalled) {
+      console.error('electronAPI not available, unlocking play button as fallback');
+      lockPlayButton(false);
+      return;
+    }
+    
     // Check if game is installed
     const isInstalled = await window.electronAPI.isGameInstalled();
     
@@ -537,7 +547,9 @@ async function checkGameInstallation() {
     
     console.log(`Game installed: ${isInstalled}, version_client: ${versionClient}`);
     
-    // If version_client is null and game is not installed, trigger installation
+    lockPlayButton(false);
+    
+    // If version_client is null and game is not installed, show install page
     if (versionClient === null && !isInstalled) {
       console.log('Game not installed and version_client is null, showing install page...');
       
@@ -550,13 +562,7 @@ async function checkGameInstallation() {
         installPage.style.display = 'block';
         if (launcher) launcher.style.display = 'none';
         if (sidebar) sidebar.style.pointerEvents = 'none';
-        
-        // Unlock play button since we're in install mode
-        lockPlayButton(false);
       }
-    } else {
-      // Game is installed or version is set, unlock play button
-      lockPlayButton(false);
     }
   } catch (error) {
     console.error('Error checking game installation:', error);
