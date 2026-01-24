@@ -686,8 +686,7 @@ window.LauncherUI = {
 };
 
 // Make installation effects globally available
-window.showInstallationEffects = showInstallationEffects;
-window.hideInstallationEffects = hideInstallationEffects;
+
 
 // Draggable progress bar functionality
 function setupProgressDrag() {
@@ -744,21 +743,6 @@ function setupProgressDrag() {
   function dragEnd() {
     isDragging = false;
     progressOverlay.classList.remove('dragging');
-  }
-}
-
-// Show/hide installation effects
-function showInstallationEffects() {
-  const installationEffects = document.getElementById('installationEffects');
-  if (installationEffects) {
-    installationEffects.style.display = 'block';
-  }
-}
-
-function hideInstallationEffects() {
-  const installationEffects = document.getElementById('installationEffects');
-  if (installationEffects) {
-    installationEffects.style.display = 'none';
   }
 }
 

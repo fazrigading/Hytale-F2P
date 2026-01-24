@@ -324,18 +324,18 @@ class ClientPatcher {
     console.log(`Force patching server for ${newDomain}`);
 
     if (progressCallback) {
-      progressCallback('Preparing to patch server...', 10);
-    }
-
-    console.log('Creating backup...');
-    this.backupClient(serverPath);
-
-    if (progressCallback) {
       progressCallback('Extracting server JAR...', 20);
     }
 
     console.log('Opening server JAR...');
-    const zip = new AdmZip(serverPath);
+    let zip;
+    try {
+      zip = new AdmZip(serverPath);
+    } catch (zipError) {
+      console.error('Failed to read server JAR:', zipError.message);
+      return { success: false, error: `Failed to read JAR: ${zipError.message}` };
+    }
+    
     const entries = zip.getEntries();
     console.log(`JAR contains ${entries.length} entries`);
 
@@ -375,7 +375,24 @@ class ClientPatcher {
     }
 
     console.log('Writing patched JAR...');
-    zip.writeZip(serverPath);
+    const tempPath = serverPath + '.patched.tmp';
+    
+    // Write to temp file first to avoid corruption
+    try {
+      zip.writeZip(tempPath);
+      
+      // Replace original with patched version
+      if (fs.existsSync(serverPath)) {
+        fs.unlinkSync(serverPath);
+      }
+      fs.renameSync(tempPath, serverPath);
+    } catch (writeError) {
+      // Cleanup temp file if it exists
+      if (fs.existsSync(tempPath)) {
+        fs.unlinkSync(tempPath);
+      }
+      throw writeError;
+    }
 
     this.markAsPatched(serverPath);
 

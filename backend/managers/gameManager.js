@@ -321,7 +321,22 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
   
   try {
     if (progressCallback) {
-      progressCallback('Updating game files...', 0, null, null, null);
+      progressCallback('Backing up user data...', 5, null, null, null);
+    }
+
+    // Backup UserData AVANT de télécharger/installer (critical for same-branch updates)
+    try {
+      console.log(`[UpdateGameFiles] Attempting to backup UserData from old branch: ${oldBranch}`);
+      backupPath = await userDataBackup.backupUserData(installPath, oldBranch, hasVersionConfig);
+      if (backupPath) {
+        console.log(`[UpdateGameFiles] ✓ UserData backed up from ${oldBranch}: ${backupPath}`);
+      }
+    } catch (backupError) {
+      console.warn('[UpdateGameFiles] ✗ UserData backup failed:', backupError.message);
+    }
+
+    if (progressCallback) {
+      progressCallback('Updating game files...', 10, null, null, null);
     }
     console.log(`Updating game files to version: ${newVersion} (branch: ${branch})`);
 
@@ -333,31 +348,16 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     fs.mkdirSync(tempUpdateDir, { recursive: true });
 
     if (progressCallback) {
-      progressCallback('Downloading new game version...', 10, null, null, null);
+      progressCallback('Downloading new game version...', 20, null, null, null);
     }
 
     const pwrFile = await downloadPWR(branch, newVersion, progressCallback, cacheDir);
 
     if (progressCallback) {
-      progressCallback('Extracting new files...', 50, null, null, null);
+      progressCallback('Extracting new files...', 60, null, null, null);
     }
 
     await applyPWR(pwrFile, progressCallback, tempUpdateDir, toolsDir, branch, cacheDir);
-
-    if (progressCallback) {
-      progressCallback('Backing up user data...', 70, null, null, null);
-    }
-
-    // Backup UserData from OLD branch (before switching)
-    try {
-      console.log(`[UpdateGameFiles] Attempting to backup UserData from old branch: ${oldBranch}`);
-      backupPath = await userDataBackup.backupUserData(installPath, oldBranch, hasVersionConfig);
-      if (backupPath) {
-        console.log(`[UpdateGameFiles] ✓ UserData backed up from ${oldBranch}: ${backupPath}`);
-      }
-    } catch (backupError) {
-      console.warn('[UpdateGameFiles] ✗ UserData backup failed:', backupError.message);
-    }
 
     if (progressCallback) {
       progressCallback('Replacing game files...', 80, null, null, null);
