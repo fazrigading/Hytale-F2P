@@ -9,7 +9,7 @@ const { getResolvedAppDir, findClientPath } = require('../core/paths');
 const { setupWaylandEnvironment, setupGpuEnvironment } = require('../utils/platformUtils');
 const { saveUsername, saveInstallPath, loadJavaPath, getUuidForUser, getAuthServerUrl, getAuthDomain, loadVersionBranch, loadVersionClient, saveVersionClient } = require('../core/config');
 const { resolveJavaPath, getJavaExec, getBundledJavaPath, detectSystemJava, JAVA_EXECUTABLE } = require('./javaManager');
-const { getInstalledClientVersion, getLatestClientVersion } = require('../services/versionManager');
+const { getLatestClientVersion } = require('../services/versionManager');
 const { updateGameFiles } = require('./gameManager');
 const { syncModsForCurrentProfile } = require('./modManager');
 

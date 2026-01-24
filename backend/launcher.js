@@ -76,7 +76,6 @@ const {
 
 // Services
 const {
-  getInstalledClientVersion,
   getLatestClientVersion
 } = require('./services/versionManager');
 
@@ -141,7 +140,6 @@ module.exports = {
   detectGpu,
   
   // Version functions
-  getInstalledClientVersion,
   getLatestClientVersion,
   saveVersionClient,
   loadVersionClient,
