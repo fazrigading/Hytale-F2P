@@ -12,3 +12,6 @@ pkg/
 *.zst
 bun.lockb
 .env
+
+# Downloaded patcher (from hytale-auth-server)
+backend/patcher/

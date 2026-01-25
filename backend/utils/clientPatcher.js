@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const AdmZip = require('adm-zip');
+const { execSync, spawn } = require('child_process');
+const { getJavaExec, getBundledJavaPath } = require('../managers/javaManager');
+const { JRE_DIR } = require('../core/paths');
 
 // Domain configuration
 const ORIGINAL_DOMAIN = 'hytale.com';
@@ -16,19 +19,22 @@ function getTargetDomain() {
     const { getAuthDomain } = require('../core/config');
     return getAuthDomain();
   } catch (e) {
-    return 'sanasol.ws';
+    return 'auth.sanasol.ws';
   }
 }
 
-const DEFAULT_NEW_DOMAIN = 'sanasol.ws';
+const DEFAULT_NEW_DOMAIN = 'auth.sanasol.ws';
 
 /**
  * Patches HytaleClient and HytaleServer binaries to replace hytale.com with custom domain
  * This allows the game to connect to a custom authentication server
  *
  * Supports domains from 4 to 16 characters:
+ * - All F2P traffic routes to single endpoint: https://{domain} (no subdomains)
  * - Domains <= 10 chars: Direct replacement, subdomains stripped
- * - Domains 11-16 chars: Split mode - first 6 chars become subdomain prefix
+ * - Domains 11-16 chars: Split mode - first 6 chars replace subdomain prefix, rest replaces domain
+ *
+ * Official hytale.com keeps original subdomain behavior (sessions., account-data., etc.)
  */
 class ClientPatcher {
   constructor() {
@@ -247,9 +253,9 @@ class ClientPatcher {
 
     console.log(`  Patching sentry: ${oldSentry.slice(0, 30)}... -> ${newSentry}`);
     const sentryResult = this.replaceBytes(
-      result,
-      this.stringToLengthPrefixed(oldSentry),
-      this.stringToLengthPrefixed(newSentry)
+        result,
+        this.stringToLengthPrefixed(oldSentry),
+        this.stringToLengthPrefixed(newSentry)
     );
     result = sentryResult.buffer;
     if (sentryResult.count > 0) {
@@ -260,9 +266,9 @@ class ClientPatcher {
     // 2. Patch main domain (hytale.com -> mainDomain)
     console.log(`  Patching domain: ${ORIGINAL_DOMAIN} -> ${strategy.mainDomain}`);
     const domainResult = this.replaceBytes(
-      result,
-      this.stringToLengthPrefixed(ORIGINAL_DOMAIN),
-      this.stringToLengthPrefixed(strategy.mainDomain)
+        result,
+        this.stringToLengthPrefixed(ORIGINAL_DOMAIN),
+        this.stringToLengthPrefixed(strategy.mainDomain)
     );
     result = domainResult.buffer;
     if (domainResult.count > 0) {
@@ -277,9 +283,9 @@ class ClientPatcher {
     for (const sub of subdomains) {
       console.log(`  Patching subdomain: ${sub} -> ${newSubdomainPrefix}`);
       const subResult = this.replaceBytes(
-        result,
-        this.stringToLengthPrefixed(sub),
-        this.stringToLengthPrefixed(newSubdomainPrefix)
+          result,
+          this.stringToLengthPrefixed(sub),
+          this.stringToLengthPrefixed(newSubdomainPrefix)
       );
       result = subResult.buffer;
       if (subResult.count > 0) {
@@ -303,9 +309,9 @@ class ClientPatcher {
 
     // Try length-prefixed format first
     const lpResult = this.replaceBytes(
-      result,
-      this.stringToLengthPrefixed(oldUrl),
-      this.stringToLengthPrefixed(newUrl)
+        result,
+        this.stringToLengthPrefixed(oldUrl),
+        this.stringToLengthPrefixed(newUrl)
     );
 
     if (lpResult.count > 0) {
@@ -450,8 +456,13 @@ class ClientPatcher {
       return { success: false, error };
     }
 
-    // FORCE PATCHING: Always patch, never skip
-    console.log(`Force patching client for ${newDomain}`);
+    if (this.isPatchedAlready(clientPath)) {
+      console.log(`Client already patched for ${newDomain}, skipping`);
+      if (progressCallback) {
+        progressCallback('Client already patched', 100);
+      }
+      return { success: true, alreadyPatched: true, patchCount: 0 };
+    }
 
     if (progressCallback) {
       progressCallback('Preparing to patch client...', 10);
@@ -514,20 +525,19 @@ class ClientPatcher {
   }
 
   /**
-   * Patch the server JAR to use the custom domain
-   * JAR files are ZIP archives, so we need to extract, patch class files, and repackage
+   * Patch the server JAR using DualAuthPatcher for full dual auth support
+   * This uses the same patcher as the Docker server for consistency
    * @param {string} serverPath - Path to the HytaleServer.jar
    * @param {function} progressCallback - Optional callback for progress updates
+   * @param {string} javaPath - Path to Java executable
    * @returns {object} Result object with success status and details
    */
-  async patchServer(serverPath, progressCallback) {
+  async patchServer(serverPath, progressCallback, javaPath = null) {
     const newDomain = this.getNewDomain();
-    const strategy = this.getDomainStrategy(newDomain);
 
-    console.log('=== Server Patcher v2.0 ===');
+    console.log('=== Server Patcher v3.0 (DualAuth) ===');
     console.log(`Target: ${serverPath}`);
-    console.log(`Domain: ${newDomain} (${newDomain.length} chars)`);
-    console.log(`Mode: ${strategy.mode}`);
+    console.log(`Domain: ${newDomain}`);
 
     if (!fs.existsSync(serverPath)) {
       const error = `Server JAR not found: ${serverPath}`;
@@ -535,90 +545,364 @@ class ClientPatcher {
       return { success: false, error };
     }
 
-    // FORCE PATCHING: Always patch, never skip
-    console.log(`Force patching server for ${newDomain}`);
-
-    if (progressCallback) {
-      progressCallback('Extracting server JAR...', 20);
+    // Check if already patched with DualAuth
+    const patchFlagFile = serverPath + '.dualauth_patched';
+    if (fs.existsSync(patchFlagFile)) {
+      try {
+        const flagData = JSON.parse(fs.readFileSync(patchFlagFile, 'utf8'));
+        if (flagData.domain === newDomain) {
+          console.log(`Server already patched with DualAuth for ${newDomain}, skipping`);
+          if (progressCallback) progressCallback('Server already patched', 100);
+          return { success: true, alreadyPatched: true };
+        }
+      } catch (e) {
+        // Flag file corrupt, re-patch
+      }
     }
+
+    if (progressCallback) progressCallback('Preparing DualAuth patcher...', 10);
+
+    // Find Java executable - use bundled JRE first (same as game uses)
+    const java = javaPath || this.findJava();
+    if (!java) {
+      const error = 'Java not found. Please install the game first (it includes Java) or install Java 25 from: https://adoptium.net/';
+      console.error(error);
+      return { success: false, error };
+    }
+    console.log(`Using Java: ${java}`);
+
+    // Setup patcher directory
+    const patcherDir = path.join(__dirname, '..', 'patcher');
+    const patcherJava = path.join(patcherDir, 'DualAuthPatcher.java');
+    const libDir = path.join(patcherDir, 'lib');
+
+    // Download patcher from hytale-auth-server if not present
+    if (progressCallback) progressCallback('Checking patcher...', 15);
+    try {
+      await this.ensurePatcherDownloaded(patcherDir);
+    } catch (e) {
+      const error = `Failed to download DualAuthPatcher: ${e.message}`;
+      console.error(error);
+      return { success: false, error };
+    }
+
+    if (!fs.existsSync(patcherJava)) {
+      const error = `DualAuthPatcher.java not found at ${patcherJava}`;
+      console.error(error);
+      return { success: false, error };
+    }
+
+    // Download ASM libraries if not present
+    if (progressCallback) progressCallback('Checking ASM libraries...', 20);
+    await this.ensureAsmLibraries(libDir);
+
+    // Compile patcher if needed
+    if (progressCallback) progressCallback('Compiling patcher...', 30);
+    const compileResult = await this.compileDualAuthPatcher(java, patcherDir, libDir);
+    if (!compileResult.success) {
+      return { success: false, error: compileResult.error };
+    }
+
+    // Create backup
+    if (progressCallback) progressCallback('Creating backup...', 40);
+    console.log('Creating backup...');
+    this.backupClient(serverPath);
+
+    // Run the patcher
+    if (progressCallback) progressCallback('Patching server JAR...', 50);
+    console.log('Running DualAuthPatcher...');
+
+    const classpath = [
+      patcherDir,
+      path.join(libDir, 'asm-9.6.jar'),
+      path.join(libDir, 'asm-tree-9.6.jar'),
+      path.join(libDir, 'asm-util-9.6.jar')
+    ].join(process.platform === 'win32' ? ';' : ':');
+
+    const patchResult = await this.runDualAuthPatcher(java, classpath, serverPath, newDomain);
+
+    if (patchResult.success) {
+      // Mark as patched
+      fs.writeFileSync(patchFlagFile, JSON.stringify({
+        domain: newDomain,
+        patchedAt: new Date().toISOString(),
+        patcher: 'DualAuthPatcher'
+      }));
+
+      if (progressCallback) progressCallback('Server patching complete', 100);
+      console.log('=== Server Patching Complete ===');
+      return { success: true, patchCount: patchResult.patchCount || 1 };
+    } else {
+      return { success: false, error: patchResult.error };
+    }
+  }
+
+  /**
+   * Find Java executable - uses bundled JRE first (same as game uses)
+   * Falls back to system Java if bundled not available
+   */
+  findJava() {
+    // 1. Try bundled JRE first (comes with the game)
+    try {
+      const bundled = getBundledJavaPath(JRE_DIR);
+      if (bundled && fs.existsSync(bundled)) {
+        console.log(`Using bundled Java: ${bundled}`);
+        return bundled;
+      }
+    } catch (e) {
+      // Bundled not available
+    }
+
+    // 2. Try javaManager's getJavaExec (handles all fallbacks)
+    try {
+      const javaExec = getJavaExec(JRE_DIR);
+      if (javaExec && fs.existsSync(javaExec)) {
+        console.log(`Using Java from javaManager: ${javaExec}`);
+        return javaExec;
+      }
+    } catch (e) {
+      // Not available
+    }
+
+    // 3. Check JAVA_HOME
+    if (process.env.JAVA_HOME) {
+      const javaHome = process.env.JAVA_HOME;
+      const javaBin = path.join(javaHome, 'bin', process.platform === 'win32' ? 'java.exe' : 'java');
+      if (fs.existsSync(javaBin)) {
+        console.log(`Using Java from JAVA_HOME: ${javaBin}`);
+        return javaBin;
+      }
+    }
+
+    // 4. Try 'java' from PATH
+    try {
+      execSync('java -version 2>&1', { encoding: 'utf8' });
+      console.log('Using Java from PATH');
+      return 'java';
+    } catch (e) {
+      // Not in PATH
+    }
+
+    return null;
+  }
+
+  /**
+   * Download DualAuthPatcher from hytale-auth-server if not present
+   */
+  async ensurePatcherDownloaded(patcherDir) {
+    const patcherJava = path.join(patcherDir, 'DualAuthPatcher.java');
+    const patcherUrl = 'https://raw.githubusercontent.com/sanasol/hytale-auth-server/master/patcher/DualAuthPatcher.java';
+
+    if (!fs.existsSync(patcherDir)) {
+      fs.mkdirSync(patcherDir, { recursive: true });
+    }
+
+    if (!fs.existsSync(patcherJava)) {
+      console.log('Downloading DualAuthPatcher from hytale-auth-server...');
+      try {
+        const https = require('https');
+        await new Promise((resolve, reject) => {
+          const file = fs.createWriteStream(patcherJava);
+          https.get(patcherUrl, (response) => {
+            if (response.statusCode === 302 || response.statusCode === 301) {
+              // Follow redirect
+              https.get(response.headers.location, (redirectResponse) => {
+                redirectResponse.pipe(file);
+                file.on('finish', () => {
+                  file.close();
+                  resolve();
+                });
+              }).on('error', reject);
+            } else {
+              response.pipe(file);
+              file.on('finish', () => {
+                file.close();
+                resolve();
+              });
+            }
+          }).on('error', (err) => {
+            fs.unlink(patcherJava, () => {});
+            reject(err);
+          });
+        });
+        console.log('  Downloaded DualAuthPatcher.java');
+      } catch (e) {
+        console.error(`  Failed to download DualAuthPatcher: ${e.message}`);
+        throw e;
+      }
+    }
+  }
+
+  /**
+   * Download ASM libraries if not present
+   */
+  async ensureAsmLibraries(libDir) {
+    if (!fs.existsSync(libDir)) {
+      fs.mkdirSync(libDir, { recursive: true });
+    }
+
+    const libs = [
+      { name: 'asm-9.6.jar', url: 'https://repo1.maven.org/maven2/org/ow2/asm/asm/9.6/asm-9.6.jar' },
+      { name: 'asm-tree-9.6.jar', url: 'https://repo1.maven.org/maven2/org/ow2/asm/asm-tree/9.6/asm-tree-9.6.jar' },
+      { name: 'asm-util-9.6.jar', url: 'https://repo1.maven.org/maven2/org/ow2/asm/asm-util/9.6/asm-util-9.6.jar' }
+    ];
+
+    for (const lib of libs) {
+      const libPath = path.join(libDir, lib.name);
+      if (!fs.existsSync(libPath)) {
+        console.log(`Downloading ${lib.name}...`);
+        try {
+          const https = require('https');
+          await new Promise((resolve, reject) => {
+            const file = fs.createWriteStream(libPath);
+            https.get(lib.url, (response) => {
+              response.pipe(file);
+              file.on('finish', () => {
+                file.close();
+                resolve();
+              });
+            }).on('error', (err) => {
+              fs.unlink(libPath, () => {});
+              reject(err);
+            });
+          });
+          console.log(`  Downloaded ${lib.name}`);
+        } catch (e) {
+          console.error(`  Failed to download ${lib.name}: ${e.message}`);
+          throw e;
+        }
+      }
+    }
+  }
+
+  /**
+   * Compile DualAuthPatcher if needed
+   */
+  async compileDualAuthPatcher(java, patcherDir, libDir) {
+    const patcherClass = path.join(patcherDir, 'DualAuthPatcher.class');
+    const patcherJava = path.join(patcherDir, 'DualAuthPatcher.java');
+
+    // Check if already compiled and up to date
+    if (fs.existsSync(patcherClass)) {
+      const classTime = fs.statSync(patcherClass).mtime;
+      const javaTime = fs.statSync(patcherJava).mtime;
+      if (classTime > javaTime) {
+        console.log('DualAuthPatcher already compiled');
+        return { success: true };
+      }
+    }
+
+    console.log('Compiling DualAuthPatcher...');
+
+    const javac = java.replace(/java(\.exe)?$/, 'javac$1');
+    const classpath = [
+      path.join(libDir, 'asm-9.6.jar'),
+      path.join(libDir, 'asm-tree-9.6.jar'),
+      path.join(libDir, 'asm-util-9.6.jar')
+    ].join(process.platform === 'win32' ? ';' : ':');
+
+    try {
+      execSync(`"${javac}" -cp "${classpath}" -d "${patcherDir}" "${patcherJava}"`, {
+        stdio: 'pipe',
+        cwd: patcherDir
+      });
+      console.log('  Compilation successful');
+      return { success: true };
+    } catch (e) {
+      const error = `Failed to compile DualAuthPatcher: ${e.message}`;
+      console.error(error);
+      if (e.stderr) console.error(e.stderr.toString());
+      return { success: false, error };
+    }
+  }
+
+  /**
+   * Run DualAuthPatcher on the server JAR
+   */
+  async runDualAuthPatcher(java, classpath, serverPath, domain) {
+    return new Promise((resolve) => {
+      const args = ['-cp', classpath, 'DualAuthPatcher', serverPath];
+      const env = { ...process.env, HYTALE_AUTH_DOMAIN: domain };
+
+      console.log(`Running: java ${args.join(' ')}`);
+      console.log(`  HYTALE_AUTH_DOMAIN=${domain}`);
+
+      const proc = spawn(java, args, { env, stdio: ['pipe', 'pipe', 'pipe'] });
+
+      let stdout = '';
+      let stderr = '';
+
+      proc.stdout.on('data', (data) => {
+        const str = data.toString();
+        stdout += str;
+        console.log(str.trim());
+      });
+
+      proc.stderr.on('data', (data) => {
+        const str = data.toString();
+        stderr += str;
+        console.error(str.trim());
+      });
+
+      proc.on('close', (code) => {
+        if (code === 0) {
+          resolve({ success: true, stdout });
+        } else {
+          resolve({ success: false, error: `Patcher exited with code ${code}: ${stderr}` });
+        }
+      });
+
+      proc.on('error', (err) => {
+        resolve({ success: false, error: `Failed to run patcher: ${err.message}` });
+      });
+    });
+  }
+
+  /**
+   * Legacy server patcher (simple domain replacement, no dual auth)
+   * Use patchServer() for full dual auth support
+   */
+  async patchServerLegacy(serverPath, progressCallback) {
+    const newDomain = this.getNewDomain();
+    const strategy = this.getDomainStrategy(newDomain);
+
+    console.log('=== Legacy Server Patcher ===');
+    console.log(`Target: ${serverPath}`);
+    console.log(`Domain: ${newDomain} (${newDomain.length} chars)`);
+
+    if (!fs.existsSync(serverPath)) {
+      return { success: false, error: `Server JAR not found: ${serverPath}` };
+    }
+
+    if (progressCallback) progressCallback('Patching server...', 20);
 
     console.log('Opening server JAR...');
-    let zip;
-    try {
-      zip = new AdmZip(serverPath);
-    } catch (zipError) {
-      console.error('Failed to read server JAR:', zipError.message);
-      return { success: false, error: `Failed to read JAR: ${zipError.message}` };
-    }
-    
+    const zip = new AdmZip(serverPath);
     const entries = zip.getEntries();
-    console.log(`JAR contains ${entries.length} entries`);
-
-    if (progressCallback) {
-      progressCallback('Patching class files...', 40);
-    }
 
     let totalCount = 0;
-    // For server JAR, we use UTF-8 and replace with the main domain part
     const oldUtf8 = this.stringToUtf8(ORIGINAL_DOMAIN);
-    const newUtf8 = this.stringToUtf8(strategy.mainDomain);
 
     for (const entry of entries) {
       const name = entry.entryName;
       if (name.endsWith('.class') || name.endsWith('.properties') ||
           name.endsWith('.json') || name.endsWith('.xml') || name.endsWith('.yml')) {
-
         const data = entry.getData();
-
         if (data.includes(oldUtf8)) {
           const { buffer: patchedData, count } = this.findAndReplaceDomainUtf8(data, ORIGINAL_DOMAIN, strategy.mainDomain);
           if (count > 0) {
             zip.updateFile(entry.entryName, patchedData);
-            console.log(`  Patched ${count} occurrences in ${name}`);
             totalCount += count;
           }
         }
       }
     }
 
-    if (totalCount === 0) {
-      console.log('No occurrences of hytale.com found in server JAR entries');
-      return { success: true, patchCount: 0, warning: 'No domain occurrences found in JAR' };
+    if (totalCount > 0) {
+      zip.writeZip(serverPath);
     }
 
-    if (progressCallback) {
-      progressCallback('Writing patched JAR...', 80);
-    }
-
-    console.log('Writing patched JAR...');
-    const tempPath = serverPath + '.patched.tmp';
-    
-    // Write to temp file first to avoid corruption
-    try {
-      zip.writeZip(tempPath);
-      
-      // Replace original with patched version
-      if (fs.existsSync(serverPath)) {
-        fs.unlinkSync(serverPath);
-      }
-      fs.renameSync(tempPath, serverPath);
-    } catch (writeError) {
-      // Cleanup temp file if it exists
-      if (fs.existsSync(tempPath)) {
-        fs.unlinkSync(tempPath);
-      }
-      throw writeError;
-    }
-
-    this.markAsPatched(serverPath);
-
-    if (progressCallback) {
-      progressCallback('Server patching complete', 100);
-    }
-
-    console.log(`Successfully patched ${totalCount} occurrences in server`);
-    console.log('=== Server Patching Complete ===');
-
+    if (progressCallback) progressCallback('Complete', 100);
     return { success: true, patchCount: totalCount };
   }
 
@@ -664,8 +948,9 @@ class ClientPatcher {
    * Ensure both client and server are patched before launching
    * @param {string} gameDir - Path to the game directory
    * @param {function} progressCallback - Optional callback for progress updates
+   * @param {string} javaPath - Optional path to Java executable for server patching
    */
-  async ensureClientPatched(gameDir, progressCallback) {
+  async ensureClientPatched(gameDir, progressCallback, javaPath = null) {
     const results = {
       client: null,
       server: null,
@@ -696,7 +981,7 @@ class ClientPatcher {
         if (progressCallback) {
           progressCallback(`Server: ${msg}`, pct ? 50 + pct / 2 : null);
         }
-      });
+      }, javaPath);
     } else {
       console.warn('Could not find HytaleServer.jar');
       results.server = { success: false, error: 'Server JAR not found' };

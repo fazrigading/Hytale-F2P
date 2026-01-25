@@ -4,7 +4,7 @@ const os = require('os');
 
 
 // Default auth domain - can be overridden by env var or config
-const DEFAULT_AUTH_DOMAIN = 'sanasol.ws';
+const DEFAULT_AUTH_DOMAIN = 'auth.sanasol.ws';
 
 // Get auth domain from env, config, or default
 function getAuthDomain() {
@@ -26,9 +26,10 @@ function getAuthDomain() {
 }
 
 // Get full auth server URL
+// Domain already includes subdomain (auth.sanasol.ws), so use directly
 function getAuthServerUrl() {
   const domain = getAuthDomain();
-  return `https://sessions.${domain}`;
+  return `https://${domain}`;
 }
 
 // Save auth domain to config
