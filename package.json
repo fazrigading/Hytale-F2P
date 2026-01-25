@@ -69,8 +69,7 @@
       "preload.js",
       "backend/**/*",
       "GUI/**/*",
-      "package.json",
-      ".env"
+      "package.json"
     ],
     "win": {
       "target": [

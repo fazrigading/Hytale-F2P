@@ -1,5 +1,4 @@
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const fs = require('fs');
@@ -929,10 +928,6 @@ const os = require('os');
 
 ipcMain.handle('get-local-app-data', async () => {
   return process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
-});
-
-ipcMain.handle('get-env-var', async (event, key) => {
-  return process.env[key];
 });
 
 ipcMain.handle('get-user-id', async () => {

@@ -12,9 +12,7 @@ let modsTotalPages = 1;
 
 export async function initModsManager() {
   try {
-    if (window.electronAPI && window.electronAPI.getEnvVar) {
-      console.log('Loaded API Key:', CF_API_KEY ? 'Yes' : 'No');
-    }
+    console.log('Loaded API Key:', CF_API_KEY ? 'Yes' : 'No');
   } catch (err) {
     console.error('Failed to load API Key:', err);
   }
