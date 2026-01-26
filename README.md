@@ -161,9 +161,15 @@
 
 
 ### 🪟 Windows Prequisites
-* **Java JDK 25:** Download via [Adoptium](https://adoptium.net/temurin/releases/?version=25) or [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows)
-* **Latest Visual Studio Redist:** Download via [Microsoft Visual C++ Redistributable](https://aka.ms/vc14/vc_redist.x64.exe) or [All-in-One by Techpowerup](https://www.techpowerup.com/download/visual-c-redistributable-runtime-package-all-in-one/)
-* **ENABLE MULTIPLAYER:** // TODO MULTIPLAYER GUIDE; FIREWALL GUIDE AND SUCH
+* **
+* **Java JDK 25:**
+  * [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows), **no** support for Windows ARM64 in both version 25 and 21.
+  * [Adoptium](https://adoptium.net/temurin/releases/?version=25), has Windows ARM64 support in version 21 only.
+  * [Microsoft](https://learn.microsoft.com/en-us/java/openjdk/download), has Windows ARM64 support in version 25.
+  * Download from any vendor if your OS is not Windows with ARM64 architecture.
+* **Latest Visual Studio Redist:** 
+  * Download via [Microsoft Visual C++ Redistributable](https://aka.ms/vc14/vc_redist.x64.exe)
+  * Or [All-in-One by Techpowerup](https://www.techpowerup.com/download/visual-c-redistributable-runtime-package-all-in-one/)
 
 ### 🐧 Linux Prequisites
 
