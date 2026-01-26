@@ -14,15 +14,15 @@ source=("$url/archive/v$pkgver.tar.gz" "Hytale-F2P.desktop")
 sha256sums=('SKIP' '46488fada4775d9976d7b7b62f8d1f1f8d9a9a9d8f8aa9af4f2e2153019f6a30')
 
 build() {
-   cd "$_pkgname-$pkgver"
+   cd "$pkgname-$pkgver"
    npm ci
    npm run build:arch
 }
 
 package() {
-  cd "$_pkgname-$pkgver"
-  install -d "$pkgdir/opt/$_pkgname"
-  cp -r dist/linux-unpacked/* "$pkgdir/opt/$_pkgname"
-  install -Dm644 "$srcdir/$_pkgname.desktop" "$pkgdir/usr/share/applications/$_pkgname.desktop"
-  install -Dm644 GUI/icon.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/$_pkgname.png"
+  cd "$pkgname-$pkgver"
+  install -d "$pkgdir/opt/$pkgname"
+  cp -r dist/linux-unpacked/* "$pkgdir/opt/$pkgname"
+  install -Dm644 "$srcdir/$pkgname.desktop" "$pkgdir/usr/share/applications/$pkgname.desktop"
+  install -Dm644 GUI/icon.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/$pkgname.png"
 }
