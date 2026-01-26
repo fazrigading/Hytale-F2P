@@ -195,7 +195,7 @@ async function getModsPath(customInstallPath = null) {
           }
       } catch (e) { /* path doesn't exist at all */ }
 
-      if (!isBrokenLink) {
+      if (isBrokenLink) {
         fs.unlinkSync(modsPath); // Remove broken symlink
       }
       if (!pathExists || isBrokenLink) {
