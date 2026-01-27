@@ -7,6 +7,7 @@
   <p><small>An unofficial cross-platform launcher for Hytale with automatic updates and multiplayer support (all OS supported)</small></p>
 </header>
 
+![GitHub Downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge)
 ![Version](https://img.shields.io/badge/Version-2.1.1-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
