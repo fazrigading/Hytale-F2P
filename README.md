@@ -160,8 +160,9 @@
 <p id="fn2"><sup>Note 2</sup> Using Discrete/Dedicated GPU (dGPU) must have 8 GB RAM minimum.</p>
 <p id="fn3"><sup>Note 3</sup> Using Integrated GPU (dGPU) must have 12 GB RAM minimum.</p>
 
-> [!NOTE]
-> Warning
+> [!WARNING]
+> Our launcher has **not yet** supported Offline Mode (playing Hytale without internet).
+> We will surely add the feature as soon as possible. Kindly wait for the update.
 
 ---
 
