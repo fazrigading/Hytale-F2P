@@ -4,7 +4,7 @@
   <h1>🎮 Hytale F2P Launcher 🚀</h1>
   <h2>💻 Cross-Platform Multiplayer 🖥️</h2>
   <h3>Available for Windows 🪟, macOS 🍎, and Linux 🐧</h3>
-  <p><small>An unofficial cross-platform launcher for Hytale with automatic updates and multiplayer support (all OS supported)</small></p>
+  <p><small>An unofficial cross-platform launcher for Hytale with automatic updates and multiplayer support!</small></p>
 </header>
 
 ![GitHub Downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge)
@@ -119,9 +119,9 @@
     <tr>
       <td><b>🖥️ OS</b></td>
       <td colspan="3" align="center">
-        Windows 10/11 (64-bit; X64/ARM64) | Linux (x64/ARM64) | macOS (Apple Silicon only)
+        Windows 10/11 (64-bit X64) | Linux (x64) | macOS (ARM64/Apple Silicon)
         <br />
-        <small><i>⚠️ Note: macOS Intel (x86) is not yet supported <sup><a href="#fn1" id="ref1">1</a></sup></i></small>
+        <small><i>⚠️ Note: ARM64 (Windows & Linux), macOS (x86/Intel) <b>are not supported!</b> ⚠️</i></small>
       </td>
     </tr>
     <tr>
@@ -132,7 +132,7 @@
     </tr>
     <tr>
       <td><b>🧠 RAM</b></td>
-      <td>8GB (dGPU)<sup><a href="#fn1" id="ref2">2</a></sup> /<br>12GB (iGPU)<sup><a href="#fn1" id="ref3">3</a></sup></td>
+      <td>8GB (dGPU) / 12GB (iGPU)<sup><a href="#fn1" id="ref1">1</a></sup></td>
       <td>16 GB</td>
       <td>32 GB</td>
     </tr>
@@ -157,9 +157,7 @@
   </tbody>
 </table>
 </div>
-<p id="fn1"><sup>Note 1</sup> Hytale did not provide game files for macOS Intel, yet.</p>
-<p id="fn2"><sup>Note 2</sup> Using Discrete/Dedicated GPU (dGPU) must have 8 GB RAM minimum.</p>
-<p id="fn3"><sup>Note 3</sup> Using Integrated GPU (dGPU) must have 12 GB RAM minimum.</p>
+<p id="fn1"><sup>Note 1</sup> Using Discrete/Dedicated GPU (dGPU) must have 8 GB RAM minimum, while using Integrated GPU (iGPU) must have 12 GB RAM.</p>
 
 > [!WARNING]
 > Our launcher has **not yet** supported Offline Mode (playing Hytale without internet).
@@ -169,10 +167,9 @@
 
 ### 🪟 Windows Prequisites
 * **Java JDK 25:**
-  * [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows), **no** support for Windows ARM64 in both version 25 and 21.
-  * [Adoptium](https://adoptium.net/temurin/releases/?version=25), has Windows ARM64 support in version 21 only.
+  * [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows)
+  * [Adoptium](https://adoptium.net/temurin/releases/?version=25)
   * [Microsoft](https://learn.microsoft.com/en-us/java/openjdk/download), has Windows ARM64 support in version 25.
-  * Download from any vendor if your OS is not Windows with ARM64 architecture.
 * **Latest Visual Studio Redist:** 
   * Download via [Microsoft Visual C++ Redistributable](https://aka.ms/vc14/vc_redist.x64.exe)
   * Or [All-in-One by Techpowerup](https://www.techpowerup.com/download/visual-c-redistributable-runtime-package-all-in-one/)
@@ -184,7 +181,7 @@
 
 * Make sure you have already installed newest **GPU driver** especially proprietary NVIDIA, consult your distro docs or wiki.
   * Also make sure that your GPU can be connected to EGL, try checking it first (again, consult your distro docs or wiki) before installing Hytale game via our launcher.
-* Install `libpng` package to avoid SDL3_Image error:
+* Install `libpng` package to avoid `SDL3_Image` error:
   * `libpng16-16 libpng-dev` for Ubuntu/Debian-based Distro
   * `libpng libpng-devel` for Fedora/RHEL-based Distro
   * `libpng` for Arch-based Distro
@@ -198,15 +195,12 @@
 1. **Prerequisites:** Ensure you have installed all [**Windows Prerequisites**](https://github.com/amiayweb/Hytale-F2P/tree/main?tab=readme-ov-file#-windows-prequisites) listed above.
 2. **Download:** Get the latest `Hytale-F2P-Launcher.exe` from the [**Releases**](https://github.com/amiayweb/Hytale-F2P/releases/latest/) page.
 3. **SmartScreen Note:** Since the executable is currently unsigned, Windows may show a "Windows protected your PC" popup.
-    * Click **More info**.
-    * Click **Run anyway**.
+    * Click **More info**, then click **Run anyway**.
 4. **Launch:** Once installed, you can launch the app directly from your Desktop or the Start menu.
-5. **Whitelist in Windows Firewall to Avoid "Server Failed to Boot" Error** [#192](https://github.com/amiayweb/Hytale-F2P/issues/192#issuecomment-3803042908)
+5. **Whitelist in Windows Firewall** [#192](https://github.com/amiayweb/Hytale-F2P/issues/192#issuecomment-3803042908)
     * Open the Windows Start Menu and search for `Allow an app through Windows Firewall`
     * Click "Change settings" (you may need Admin privileges) and Locate `HytaleClient.exe` in the list.
     * Ensure both the Private and Public checkboxes are checked. Click OK to save.
-
----
 
 ### 🐧 Linux Installation
 
@@ -251,8 +245,6 @@
    * **Desktop Entry:** After installing via `.rpm`, `.deb`, or `.pkg.tar.zst`, the launcher should automatically appear in your App Library/Grid.
    * Missing libxcrypt.so.1: Install `libxcrypt-compat` using your package manager
 
----
-
 ### 🍎 macOS Installation  
 
 > [!NOTE]
@@ -280,9 +272,9 @@ The `.zip` version is useful for users who prefer a portable installation or nee
 
 --- 
 
-# How to Host a Server
+# 📢 How to Host a Server
 
-## Host your Singleplayer Server (Online-Play Feature)
+## 🌐 Host your Singleplayer Server (Online-Play Feature)
 
 > [!NOTE]
 > You have to play the game to host the server. See Dedicated Server section below if you want to host it without you playing as the host.
@@ -291,7 +283,7 @@ The `.zip` version is useful for users who prefer a portable installation or nee
 2. Pause the game (Esc) > select Online Play > Turn on `Allow Other Players to Join` > Set password if needed > Press `Save`.
 3. Check the status `Connected via STUN` or `Connected via UPnP`.
 
-## Dedicated Server
+## 🖧 Host a Dedicated Server
 
 > [!NOTE]
 > If you already have the patched `HytaleServer.jar` in `HytaleF2P/{release/pre-release}/package/game/latest/Server`, you can use it to host local dedicated server. 
@@ -300,14 +292,20 @@ The `.zip` version is useful for users who prefer a portable installation or nee
 > Use services like Playit.gg, Tailscale, Radmin VPN to share UDP connection if setting up router as an admin is not possible.
 
 > [!WARNING]
-> `Hytale-F2P-Server.rar` file is needed to set up a server on non-playing hardware (such as VPS/server hosting).
+> `Hytale-F2P-Server.rar` file is needed to set up a server on non-playing hardware (such as VPS/server hosting). Linux ARM64 is supported for server only.
 
 > [!IMPORTANT]
 > See detailed information of setting up a server here: [SERVER.md](SERVER.md). Download the latest patched JAR, the patched RAR, or the SH/BAT scripts from channel `#open-public-server` in our Discord Server. 
 
 ---
 
-## 🛠️ Building from Source
+## 🔧 Troubleshooting
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed Troubleshooting guide.
+
+---
+
+## 🔨 Building from Source
 
 See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 
