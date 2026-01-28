@@ -205,7 +205,7 @@
     "modsDeletingMod": "Удаление мода...",
     "modsLoadingMods": "Загрузка модов с CurseForge...",
     "modsInstalledSuccess": "{name} успешно установлен! 🎉",
-    "modsDeletedSuccess": "{name} удален успешно!",
+    "modsDeletedSuccess": "{name} удалён успешно!",
     "modsDownloadFailed": "Не получилось скачать мод: {error}",
     "modsToggleFailed": "Не получилось включить мод: {error}",
     "modsDeleteFailed": "Не получилось удалить мод: {error}",
