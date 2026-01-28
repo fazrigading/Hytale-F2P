@@ -1,34 +1,79 @@
-# Hytale F2P Server Guide
+# 🎮 Hytale F2P Server Guide
 
 Play with friends online! This guide covers both easy in-game hosting and advanced dedicated server setup.
 
-DOWNLOAD SERVER FILES HERE: https://discord.gg/MEyWUxt77m
+### **DOWNLOAD SERVER FILES (JAR/RAR/SCRIPTS) HERE: https://discord.gg/MEyWUxt77m** 
+
+**Table of Contents**
+  
+* [A. Host your Singleplayer World](SERVER.md#1-host-your-singleplayer-world-to-your-friends-online-play-feature)
+  * [1. Using In-Game Invite Code / Online Play Feature]()
+    * [Common Issues (UPnP/NAT/STUN) on Online Play](SERVER.md#common-issues-upnpnatstun-on-online-play)
+  * [2. Using Playit.gg \[Recommended\]]()
+  * [3. Using Radmin VPN]()
+* [B. Dedicated Server]
+  * [1. ] 
+---
+
+### "Server" Term and Definiton
+
+"HytaleServer.jar", which called as "Server", functions as the place of authentication of the client that supposed to go to Hytale Official Authentication System but we managed our way to redirect it on our service (sanasol.ws), handling approximately thousands of users to play this game for free to worldwide players.
+
+Kindly support us via [our Buy Me a Coffee link](https://buymeacoffee.com/hf2p) if you think our launcher took a big part of developing this Hytale community for the love of the game itself. 
+**We will always advertise, always pushing, and always asking, to every users of this launcher to purchase the original game to help the official development of Hytale**. 
+
+### Server Directory Location
+
+Here are the directory locations of Server folder if you have installed 
+- **Windows:** `%localappdata%\HytaleF2P\release\package\game\latest\Server`
+- **macOS:** `~/Library/Application Support/HytaleF2P/release/package/game/latest/Server`
+- **Linux:** `~/.hytalef2p/release/package/game/latest/Server`
+
+> [!NOTE]
+> This location only exists if the user installed the game using our launcher. The `Server` folder needed to auth the HytaleClient to play Hytale online
+> (for now; we planned to add offline mode in later version of our launcher).
+
+> [!IMPORTANT]
+> Hosting a dedicated Hytale server will not need the exact similar tree. You can put it anywhere, as long as the directory has `Assets.zip` which
+> can be acquired from our launcher via our `HytaleServer.rar` server file (which contains patched `HytaleServer.jar`, `Assets.zip`, and `run_server` scripts in `.sh & .bat`.
 
 ---
 
-## Part 1: Playing with Friends (Online Play)
+# Host
+
+## 1 - Host your Singleplayer World to your friends (Online Play Feature)
 
 The easiest way to play with friends - no manual server setup required!
+*The game automatically handles networking using UPnP/STUN/NAT traversal.*
 
-### How It Works
-
-1. **Start the game** via F2P Launcher
-2. **Click "Online Play"** in the main menu
-3. **Share the invite code** with your friends
-4. Friends enter your invite code to join
-
-The game automatically handles networking using UPnP/STUN/NAT traversal.
-
-### Network Requirements
-
-For Online Play to work, you need:
-
+**For Online Play to work, you need:**
 - **UPnP enabled** on your router (most routers have this on by default)
 - **Public IP address** from your ISP (not behind CGNAT)
 
-### Common Issues
+> [!TIP]
+> Hoster need to make sure that the router can use UPnP: read router docs, wiki, or watch Youtube tutorials.
+>
+> If you encounter any problem, check Common Issues section below
 
-#### "NAT Type: Carrier-Grade NAT (CGNAT)" Warning
+1. Press **Worlds** on the Main Menu.
+2. Select which world you want to play with your friend.
+3. Once you get in the world, press **ESC**/Pause the game.
+4. Press **Online Play** in the Pause Menu.
+5. Set option "Allow Other Players to Join" from OFF to **ON**. You can set Password if you want.
+6. Press **Save**, the Invite Code will appear.
+7. Press **Copy to Clipboard** and **Share the Invite Code** to your friends!
+8. Friends: Press **Servers** in the Main Menu > Press **Join via Code** > Paste the Code > Join.
+
+> [!WARNING]
+> If other players can't join the Hoster with error: `Failed to connect to any available address. The host may be offline or behind a strict firewall.`
+> 
+> **AND ALSO** the Hoster "Online Play" menu shows `Connected to STUN - NAT Type: Restricted (No UPnP)`,
+>
+> this means the Online Play is **unavailable** on the Hoster machine, and it is neccessary to use services to host your world. **We recommend Playit.gg!**
+
+
+### Common Issues (UPnP/NAT/STUN) on Online Play
+<details><summary><b>1) "NAT Type: Carrier-Grade NAT (CGNAT)" Warning</b></summary>
 
 If you see this message:
 ```
@@ -40,14 +85,13 @@ Warning: Your network configuration may prevent other players from connecting.
 **What this means:** Your ISP doesn't give you a public IP address. Multiple customers share one public IP, which blocks incoming connections.
 
 **Solutions:**
-
 1. **Contact your ISP** - Request a public/static IP address (may cost extra)
 2. **Use a VPN with port forwarding** - Services like Mullvad, PIA, or AirVPN offer this
-3. **Use Radmin VPN or Playit.gg** - Create a virtual LAN with friends (see below)
+3. **Use Playit.gg / Tailscale / Radmin VPN** - Create a virtual LAN with friends (see below)
 4. **Have a friend with public IP host instead**
+</details>
 
-#### "UPnP Failed" or "Port Mapping Failed"
-
+<details><summary><b>2) "UPnP Failed" or "Port Mapping Failed" Warning</b></summary>
 **Check your router:**
 1. Log into router admin panel (usually `192.168.1.1` or `192.168.0.1`)
 2. Find UPnP settings (often under "Advanced" or "NAT")
@@ -56,22 +100,48 @@ Warning: Your network configuration may prevent other players from connecting.
 
 **If UPnP isn't available:**
 - Manually forward **port 5520 UDP** to your computer's local IP
-- See "Port Forwarding" section below
+- See "Port Forwarding" or "Workarounds or NAT/CGNAT" sections below
+</details>
 
-#### "Strict NAT" or "Symmetric NAT"
-
+<details><summary><b>3) "Strict NAT" or "Symmetric NAT" Warning</b></summary>
 Some routers have restrictive NAT that blocks peer connections.
 
 **Try:**
 1. Enable "NAT Passthrough" or "NAT Filtering: Open" in router settings
 2. Put your device in router's DMZ (temporary test only)
-3. Use Radmin VPN as workaround
+3. Use Playit.gg / Tailscale / Radmin VPN as workaround
+</details>
 
 ### Workarounds for NAT/CGNAT Issues
 
-#### Option 1: playit.gg (Recommended)
+#### Option 1: Playit.gg (Recommended) ✔️
 
 Free tunneling service - only the host needs to install it:
+
+1. Go to https://playit.gg/login and **Log In** with your existing account, **Create Account** if you don't have one
+2. Press "Add a tunnel" > Select `UDP` > Tunnel description of `Hytale Server` > Port count `1` > and Local Port `5520`
+3. Press **Start the tunnel** (or you can just run the Playit.gg.EXE if you already installed it on your machine) - You'll get a public address like `xx-xx.gl.at.ply.gg:5520`
+4. Go to https://playit.gg/download : `Installer` (Windows) or `x86-64` (Linux) or follow `Debian Install Script` (Debian-based only) 
+   * Windows: Install the `playit-windows.msi`
+   * Linux:
+     * Right-click file > Properties > Turn on 'Executable as a Program' | or just do `chmod +x playit-linux-amd64` on terminal
+     * Run by double-clicking the file or `./playit-linux-amd64` via terminal
+5. Open Playit.gg > Copy (select the URL, then Right-Click | `Ctrl+Shift+C` for Linux) > Paste the prompted URL into your browser to link your created account
+6. **WARNING: Do not close the terminal if you are still playing or hosting the server**
+7. 
+8. Now you can use the public address that written in the playit.gg exe/you can check via browser [look at step 3]
+9. Download the `run_server_with_tokens` script file (`.BAT` for Windows, `.SH` for Linux) from our Discord server > channel `#open-public-server`
+10. Put the script file to the `Server` folder in `HytaleF2P` directory (`%localappdata%\HytaleF2P\release\package\game\latest\Server`)
+11. Copy the `Assets.zip` from the `%localappdata%\HytaleF2P\release\package\game\latest\` folder to the `Server\` folder
+12. double-click the .BAT file to host your server, wait until it shows like 
+```
+===================================================
+Hytale Server Booted! [Multiplayer, Fresh Universe]
+===================================================
+```
+12. You connect to the server by go to `Servers` in your game client, and add server, type `localhost` in the address box, use any name for your server, `my server` for example.
+13. Send the public address in step 3 to your friends, use `add server` also.
+14. enjoy :smile:
 
 1. **Download [playit.gg](https://playit.gg/)** and run it - Connect your account from the terminal (do not close it when playing on the server)  
 2. **Add a tunnel** - Select "UDP", tunnel description of "Hytale Server", port count `1`, and local port `5520`
@@ -98,13 +168,13 @@ It creates mesh VPN service that streamlines connecting devices and services sec
 [Once installed, Tailwind starts and live inside your hidden icon section in Windows, Mac and Linux]
 2. Create a **common tailscale** account which will shared among your friends to log in.
 3. Ask your **host to login in to thier tailscale client first**, then the other members.
-##### Host
-  1. Open your singleplayer world
-  2. Go to Online Play settings
-  3. Re-save your settings to generate a new share code
-##### Friends
-  1. Ensure Tailscale is connected
-2. Use the new share code to connect
+  * Host
+    * Open your singleplayer world
+    * Go to Online Play settings
+    * Re-save your settings to generate a new share code
+  * Friends
+    * Ensure Tailscale is connected
+    * Use the new share code to connect
 [To test your connection, ping the host's ipv4 mentioned in tailwind]
 ---
 
@@ -457,3 +527,4 @@ JVM_XMX=8G \
 - Hytale F2P Project
 - [Hybrowse Docker Image](https://github.com/Hybrowse/hytale-server-docker)
 - Auth Server: sanasol.ws
+
