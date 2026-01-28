@@ -90,9 +90,9 @@
   },
   "settings": {
     "title": "НАСТРОЙКИ",
-    "java": "Рантайм JAVA",
+    "java": "Java Runtime",
     "useCustomJava": "Укажите свой путь Java",
-    "javaDescription": "Переопределить встроенный рантайм Java с вашей установкой",
+    "javaDescription": "Переопределить встроенный Java Runtime с вашей установкой",
     "javaPath": "Путь исполняемого файла Java",
     "javaPathPlaceholder": "Выберите путь Java...",
     "javaBrowse": "Обзор",
@@ -216,7 +216,7 @@
   "confirm": {
     "defaultTitle": "Подтвердить действие",
     "regenerateUuidTitle": "Сгенерировать новый UUID",
-    "regenerateUuidMessage": "Вы уверены, что хотите сгенерировать новый UUID? Генерация новго UUID изменит вашу текущую личность игрока!",
+    "regenerateUuidMessage": "Вы уверены, что хотите сгенерировать новый UUID? Генерация нового UUID изменит вашу текущую личность игрока!",
     "regenerateUuidButton": "Сгенерировать",
     "setCustomUuidTitle": "Установить кастомный UUID",
     "setCustomUuidMessage": "Вы уверены, что хотите установить кастомный UUID? Установка кастомного UUID изменит вашу текущую личность игрока!",
