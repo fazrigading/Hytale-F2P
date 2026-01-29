@@ -13,6 +13,7 @@ const { getLatestClientVersion } = require('../services/versionManager');
 const { updateGameFiles } = require('./gameManager');
 const { syncModsForCurrentProfile } = require('./modManager');
 const { getUserDataPath } = require('../utils/userDataMigration');
+const { syncServerList } = require('../utils/serverListSync');
 
 // Client patcher for custom auth server (sanasol.ws)
 let clientPatcher = null;
@@ -103,6 +104,14 @@ function generateLocalTokens(uuid, name) {
 }
 
 async function launchGame(playerName = 'Player', progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto', branchOverride = null) {
+  // Synchronize server list on every game launch
+  try {
+    console.log('[Launcher] Synchronizing server list...');
+    await syncServerList();
+  } catch (syncError) {
+    console.warn('[Launcher] Server list sync failed, continuing launch:', syncError.message);
+  }
+
   const branch = branchOverride || loadVersionBranch();
   const customAppDir = getResolvedAppDir(installPathOverride);
   const customGameDir = path.join(customAppDir, branch, 'package', 'game', 'latest');
