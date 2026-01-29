@@ -90,7 +90,8 @@ async function syncServerList() {
         Id: uuidv4(), 
         Name: "@ " + remoteServer.Name, 
         Address: remoteServer.Address,
-        DateSaved: currentDate 
+        DateSaved: currentDate,
+        img_Banner: remoteServer.img_Banner || null // Copy banner if exists
       };
       apiServers.push(serverToAdd);
       console.log('[ServerListSync] Added/Updated server with new ID:', remoteServer.Name);

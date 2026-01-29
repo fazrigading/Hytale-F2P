@@ -35,6 +35,10 @@
                     <i class="fas fa-play"></i>
                     <span class="nav-tooltip" data-i18n="nav.play">Play</span>
                 </div>
+                <div class="nav-item" data-page="featured">
+                    <i class="fas fa-server"></i>
+                    <span class="nav-tooltip">Featured Servers</span>
+                </div>
                 <div class="nav-item" data-page="mods">
                     <i class="fas fa-box"></i>
                     <span class="nav-tooltip" data-i18n="nav.mods">Mods</span>
@@ -209,6 +213,40 @@
                                 </button>
                             </div>
                             <div id="newsGrid" class="news-grid-horizontal"></div>
+                        </div>
+                    </div>
+
+                    <div id="featured-page" class="page">
+                        <div class="featured-layout">
+                            <div class="featured-left">
+                                <div class="featured-header">
+                                    <h2 class="featured-title">
+                                        <i class="fas fa-star mr-2"></i>
+                                        <span>FEATURED SERVERS</span>
+                                    </h2>
+                                </div>
+                                <div id="featuredServersList" class="featured-list">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p>Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="featured-right">
+                                <div class="featured-header">
+                                    <h2 class="featured-title">
+                                        <i class="fas fa-server mr-2"></i>
+                                        <span>HF2P SERVERS</span>
+                                    </h2>
+                                </div>
+                                <div id="myServersList" class="featured-list">
+                                    <div class="loading-spinner">
+                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                        <p>Loading...</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -880,6 +918,7 @@
     </div>
 
     <script src="js/i18n.js"></script>
+    <script src="js/featured.js"></script>
     <script type="module" src="js/settings.js"></script>
     <script type="module" src="js/update.js"></script>
     <!-- updater.js disabled - using update.js instead which has skip button and macOS handling -->
