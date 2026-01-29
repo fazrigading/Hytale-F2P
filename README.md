@@ -176,9 +176,6 @@
 
 ### 🐧 Linux Prequisites
 
-> [!WARNING]
-> Ubuntu-based Distro like ZorinOS or Pop!_OS or Linux Mint would encounter issues due to UbuntuLTS environment, [check this Discord post](https://discord.com/channels/1462260103951421493/1463662398501027973).
-
 * Make sure you have already installed newest **GPU driver** especially proprietary NVIDIA, consult your distro docs or wiki.
   * Also make sure that your GPU can be connected to EGL, try checking it first (again, consult your distro docs or wiki) before installing Hytale game via our launcher.
 * Install `libpng` package to avoid `SDL3_Image` error:
