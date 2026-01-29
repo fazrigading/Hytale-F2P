@@ -17,7 +17,7 @@
 
 ⭐ **If you find this project useful, please give it a STAR!** ⭐
 
-### ⚠️ **READ [QUICK START](https://github.com/amiayweb/Hytale-F2P/tree/main?tab=readme-ov-file#-quick-start) before Downloading & Installing the Launcher!** ⚠️
+### ⚠️ **READ [QUICK START](README.md#-quick-start) before Downloading & Installing the Launcher!** ⚠️
 
 #### 🛑 **Found a problem? Join the Discord and Select #Open-A-Ticket!: https://discord.gg/gME8rUy3MB** 🛑
 
