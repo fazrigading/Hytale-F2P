@@ -86,6 +86,10 @@ function setDiscordActivity() {
         {
           label: 'GitHub',
           url: 'https://github.com/amiayweb/Hytale-F2P'
+        },
+        {
+          label: 'Discord',
+          url: 'https://discord.gg/hf2pdc'
         }
       ]
     });
