@@ -251,7 +251,7 @@ class ClientPatcher {
     const result = Buffer.from(data);
 
     const oldUrl = '.gg/hytale';
-    const newUrl = '.gg/MHkEjepMQ7';
+    const newUrl = '.gg/hf2pdc';
 
     const lpResult = this.replaceBytes(
       result,
