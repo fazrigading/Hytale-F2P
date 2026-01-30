@@ -111,7 +111,7 @@ jobs:
           sudo -u builder bash << 'EOF'
           set -e
           makepkg --printsrcinfo > .SRCINFO
-          makepkg -s --noconfirm
+          makepkg -sS --noconfirm
           EOF
 
       - name: Upload Arch Package
@@ -122,6 +122,7 @@ jobs:
             *.pkg.tar.zst
             *.src.tar.zst
             .SRCINFO
+          include-hidden-files: true
 
   release:
     needs: [build-windows, build-macos, build-linux, build-arch]
@@ -135,7 +136,6 @@ jobs:
       contents: write
 
     steps:
-      # FIX: './package.json' Module Not Found in `Get version` step
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -155,10 +155,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          # If it's a tag, use the tag. 
-          # tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}.r{1}', steps.pkg_version.outputs.VERSION, github.run_number) }}
-          # If it's the 'release' branch, use 'v2.0.2-beta.r42'
-          # name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}-beta.r{1}', steps.pkg_version.outputs.VERSION, github.run_number) }}
           files: |
             artifacts/arch-package/*.pkg.tar.zst
             artifacts/arch-package/*.src.tar.zst
