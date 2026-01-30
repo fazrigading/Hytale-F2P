@@ -43,6 +43,12 @@ body:
       required: true
 
   - type: textarea
+    id: proof
+    attributes:
+      label: Screenshots/Recordings
+      description: If applicable, add Screenshots/Recordings to help explain your problem.
+
+  - type: textarea
     id: hardwarespec
     attributes:
       label: Hardware Specification
@@ -55,9 +61,9 @@ body:
     id: version
     attributes:
       label: Version
-      description: What version are you using?
+      description: What launcher version are you using?
       options:
-        - v2.1.2
+        - v2.2.0
         - v2.1.1
         - v2.1.0
         - v2.0.11
@@ -71,12 +77,11 @@ body:
       label: Platform
       description: What platform are you using?
       options:
-        - Windows 11 x64
-        - Windows 10 x64
-        - macOS ARM64 (Apple Silicon)
-        - Linux x64 Ubuntu/Debian-based
-        - Linux x64 Fedora/RHEL-based
-        - Linux x64 Arch-based
+        - Windows 11/10
+        - macOS (Apple Silicon, M1/M2/M3)
+        - Linux Ubuntu/Debian-based (Linux Mint, Pop!_OS, etc.)
+        - Linux Fedora/RHEL-based (Fedora, CentOS, etc.)
+        - Linux Arch-based (Steamdeck, CachyOS, etc.)
     validations:
       required: true
 
