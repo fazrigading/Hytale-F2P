@@ -1398,6 +1398,26 @@ body {
     max-width: 600px;
     margin: 0 auto;
     padding-top: 2rem;
+    padding-bottom: 4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+    .settings-content {
+        max-width: 1000px;
+        flex-direction: row;
+        align-items: start;
+    }
+}
+
+.settings-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
 }
 
 .setting-group {
@@ -4466,6 +4486,12 @@ body {
     overflow-y: auto;
 }
 
+@media (min-width: 1024px) {
+    .settings-container {
+        max-width: 1200px;
+    }
+}
+
 .settings-header {
     margin-bottom: 1rem;
     text-align: center;
@@ -4493,6 +4519,11 @@ body {
     margin-bottom: 2rem;
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
+}
+
+.settings-content .settings-section,
+.settings-column .settings-section {
+    margin-bottom: 0;
 }
 
 .settings-section:hover {
