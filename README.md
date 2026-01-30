@@ -8,7 +8,7 @@
 </header>
 
 ![GitHub Downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-2.1.1-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.1.2-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
 
@@ -310,14 +310,18 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 
 ## 📋 Changelog
 
-### 🆕 v2.1.1
+### 🆕 v2.1.2
+- 
+- 🌎 **New Translation**: New France 🇲🇫, German 🇩🇪, Indonesian 🇮🇩, Russia 🇷🇺, and Swedish 🇸🇪 Translation added to the Launcher.
+
+<details>
+<summary>Click here to see older Changelogs</summary>
+
+### 🔄 v2.1.1
 - 🛠️ **Fix Bug EPERM**: EPERM or Error Permission in creating/removing process in reinstalling is now fixed.
 - 🅰️ **Adds .pkg.tar.zst Build for Arch Users**: This Arch-package has been needed since the first release.  
 - ❎ **Removes .pacman Build for Arch**: Based on the established conventions within the Arch Linux community, the file extension .pacman should not be used for package files.
 - 🌎 **New Translation**: New Polish 🇵🇱 Translation added to the Launcher. 
-
-<details>
-<summary>Click here to see older Changelogs</summary>
 
 ### 🔄 v2.1.0
 - 🚨 **Auto-Retry Downloads and Auto-Patch Files** — 

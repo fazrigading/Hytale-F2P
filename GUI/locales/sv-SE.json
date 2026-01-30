@@ -119,7 +119,7 @@
     "repairGame": "Reparera spel",
     "reinstallGame": "Ominstallera spelfiler (bevarar data)",
     "gpuPreference": "GPU-preferens",
-    "gpuHint": "Välj din föredragna GPU (Linux: påverkar DRI_PRIME)",
+    "gpuHint": "Endast för bärbar dator; inställd på Integrerad om den är på datorn",
     "gpuAuto": "Auto",
     "gpuIntegrated": "Integrerad",
     "gpuDedicated": "Dedikerad",

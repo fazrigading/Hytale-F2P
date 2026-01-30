@@ -119,7 +119,7 @@
     "repairGame": "Oyunu Onarı",
     "reinstallGame": "Oyun dosyalarını yeniden kur (veri korur)",
     "gpuPreference": "GPU Tercihi",
-    "gpuHint": "Tercih ettiğiniz GPU'yu seçin (Linux: DRI_PRIME'ı etkiler)",
+    "gpuHint": "Sadece dizüstü bilgisayarlarda bulunan bir özellik; PC'de kullanılıyorsa Entegre olarak ayarlayın.",
     "gpuAuto": "Otomatik",
     "gpuIntegrated": "Entegre",
     "gpuDedicated": "Ayrılmış",

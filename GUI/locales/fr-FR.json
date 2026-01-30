@@ -119,7 +119,7 @@
     "repairGame": "Réparer le Jeu",
     "reinstallGame": "Réinstaller les fichiers du jeu (préserve les données)",
     "gpuPreference": "Préférence GPU",
-    "gpuHint": "Sélectionnez votre GPU préféré (Linux: affecte DRI_PRIME)",
+    "gpuHint": "Fonctionnalité exclusive aux ordinateurs portables; à définir sur Intégré sur PC",
     "gpuAuto": "Auto",
     "gpuIntegrated": "Intégré",
     "gpuDedicated": "Dédié",
