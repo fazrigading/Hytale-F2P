@@ -4,7 +4,7 @@ const { getHytaleSavesDir, getResolvedAppDir } = require('../core/paths');
 const { loadConfig, saveConfig } = require('../core/config');
 
 /**
- * NEW SYSTEM (2.1.2+): UserData Migration to Centralized Location
+ * NEW SYSTEM (2.2.0+): UserData Migration to Centralized Location
  * 
  * UserData is now stored in a centralized location instead of inside game installation:
  * - Windows: %LOCALAPPDATA%\HytaleSaves\
@@ -31,7 +31,7 @@ function markMigrationCompleted() {
 }
 
 /**
- * Find old UserData location (pre-2.1.2)
+ * Find old UserData location (pre-2.2.0)
  * Searches in: installPath/branch/package/game/latest/Client/UserData
  */
 function findOldUserDataPath() {
@@ -77,7 +77,7 @@ function findOldUserDataPath() {
 
 /**
  * Migrate UserData from old location to new centralized location
- * One-time operation when upgrading to 2.1.2
+ * One-time operation when upgrading to 2.2.0
  */
 async function migrateUserDataToCentralized() {
   // Check if already migrated
@@ -149,7 +149,7 @@ async function migrateUserDataToCentralized() {
 }
 
 /**
- * Get the centralized UserData path (always use this in 2.1.2+)
+ * Get the centralized UserData path (always use this in 2.2.0+)
  * Ensures directory exists
  */
 function getUserDataPath() {

@@ -8,7 +8,7 @@
 </header>
 
 ![GitHub Downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge)
-![Version](https://img.shields.io/badge/Version-2.1.2-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-2.2.0-green?style=for-the-badge)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-orange?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
 
@@ -218,7 +218,7 @@
      # Fedora/RHEL-based
      sudo dnf install hytale-f2p-launcher.rpm
      # Debian/Ubuntu
-     sudo apt install -y libasound2 libpng16-16 libpng-dev libicu76
+     sudo apt install -y libasound2 libpng16-16 libpng-dev libicu76 # Not needed in v2.2.0+
      sudo dpkg -i hytale-f2p-launcher.deb
      ```
    * **Arch Linux (pacman):** Install the package using:
@@ -237,11 +237,6 @@
 > [!NOTE]
 > Make sure to adjust the filename correctly with the version and the architecture type. TIP: Use `cd` command to the package location.
 
-4. **Troubleshooting:**
-   * **FUSE:** If the AppImage fails to launch on newer distributions, ensure `libfuse2` (or `fuse2` on Arch/Fedora) is installed.
-   * **Desktop Entry:** After installing via `.rpm`, `.deb`, or `.pkg.tar.zst`, the launcher should automatically appear in your App Library/Grid.
-   * Missing libxcrypt.so.1: Install `libxcrypt-compat` using your package manager
-
 ### 🍎 macOS Installation  
 
 > [!NOTE]
@@ -256,7 +251,7 @@
     * Look for the message regarding "Hytale F2P Launcher" and click **Open Anyway**.
     * Authenticate with your password and click **Open**.
 
-#### **Advanced: Manual Installation (.zip)**
+#### **Advanced macOS: Manual Installation (.zip)**
 The `.zip` version is useful for users who prefer a portable installation or need to bypass specific permission issues.
 
 1. **Extract:** Download and unzip the file to your desired location (e.g., `~/Applications`).
@@ -278,18 +273,19 @@ The `.zip` version is useful for users who prefer a portable installation or nee
 
 1. Open your Singleplayer World
 2. Pause the game (Esc) > select Online Play > Turn on `Allow Other Players to Join` > Set password if needed > Press `Save`.
-3. Check the status `Connected via STUN` or `Connected via UPnP`.
+3. Check the status `Connected via UPnP`.
+4. If your friends can't connect to your hosted Online-Play feature, please follow **Local Dedicated Server** tutorial.
 
 ## 🖧 Host a Dedicated Server
 
 > [!NOTE]
-> If you already have the patched `HytaleServer.jar` in `HytaleF2P/{release/pre-release}/package/game/latest/Server`, you can use it to host local dedicated server. 
+> If you already have the patched `HytaleServer.jar` in `HytaleF2P/{release/pre-release}/package/game/latest/Server`, you can use it to host local dedicated server. Put the `.bat`/`.sh` script from our Discord server inside your `.../latest/Server` folder.
 
 > [!TIP]
 > Use services like Playit.gg, Tailscale, Radmin VPN to share UDP connection if setting up router as an admin is not possible.
 
 > [!WARNING]
-> `Hytale-F2P-Server.rar` file is needed to set up a server on non-playing hardware (such as VPS/server hosting). Linux ARM64 is supported for server only.
+> `Hytale-F2P-Server.rar` file is needed to set up a server on non-playing hardware (such as VPS/server hosting). Additional: **Linux ARM64** is supported for server only, not client.
 
 > [!IMPORTANT]
 > See detailed information of setting up a server here: [SERVER.md](SERVER.md). Download the latest patched JAR, the patched RAR, or the SH/BAT scripts from channel `#open-public-server` in our Discord Server. 
@@ -310,12 +306,19 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 
 ## 📋 Changelog
 
-### 🆕 v2.1.2
-- 
-- 🌎 **New Translation**: New France 🇲🇫, German 🇩🇪, Indonesian 🇮🇩, Russia 🇷🇺, and Swedish 🇸🇪 Translation added to the Launcher.
+### 🆕 v2.2.0
+- 🔃 **Game Patches Auto-Update Improvement:** No need to install 1.5GB for every updates! Game updates now reduced to almost **~90%** (Hytale Game Update 3 to 4 only take ~150MB).
+- 🔗 **Fix Mods Manager Issue:** Mods now can be downloaded seamlessly from the launcher, use Profiles to install your preferred mod. It will also automatically copy from selected `Profile/<profilename>` to the `Mods` folder.
+- 💾 **New User Data Location:** UserData Migration to Centralized Location. User data now preserves in `HytaleSaves` located beside `HytaleF2P` folder.
+- 🎮 **SteamDeck and Ubuntu/Debian-based Library Fix:** Replace bundled `libzstd.so` with system version to fix `glibc 2.41+` crash.
+- 🍎 **Launcher auto-update Improvement for macOS:** Fix auto-install fails on unsigned app. Added option to download the new launcher version on Github website.
+- 🌎 **New Translations**: Added France 🇲🇫, German 🇩🇪, Indonesian 🇮🇩, Russia 🇷🇺, and Swedish 🇸🇪 translations to the launcher.
+- 🔐 **Fixes Tar Vulnerability:** Updates `tar` from version `6.2.1` to `7.5.7` for vulnerability issue.
+- ⭐ **Added Features Servers:** Don't know which one to play? Join our Featured Servers!
+- 💬 **Removed Chat Pane and Add Discord Feature:** Useless chat feature, we got Discord. Join it, NOW. Also added Discord RPC features to Github and our Discord Server. SHOW OFF TO YOUR FRIENDS.
+- 🔍 **Investigation on Avatar Not Saving Bug:** We are currently investigating this issue.
 
-<details>
-<summary>Click here to see older Changelogs</summary>
+<details><summary>Click here to see older Changelogs</summary>
 
 ### 🔄 v2.1.1
 - 🛠️ **Fix Bug EPERM**: EPERM or Error Permission in creating/removing process in reinstalling is now fixed.
@@ -390,6 +393,7 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 - 🎨 **Modern Interface** - Clean, intuitive design
 - 🌟 **First Release** - Core launcher functionality
 </details>
+
 ---
 
 ## 👥 Contributors
@@ -403,20 +407,30 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 </div>
 
 ### 🏆 Project Creator
-- [**@amiayweb**](https://github.com/amiayweb) - *Lead Developer & Project Creator | Windows*
+- [**@amiayweb**](https://github.com/amiayweb) - *Lead Developer & Project Creator*
 - [**@Relyz1993**](https://github.com/Relyz1993) - *Server Helper & Second Developer & Project Creator*
 
-### 🌟 Contributors  
+### 🌟 Main Contributors  
 - [**@sanasol**](https://github.com/sanasol) - *Main Issues fixer | Multiplayer Patcher*
 - [**@Terromur**](https://github.com/Terromur) - *Main Issues fixer | Beta tester*
-- [**@fazrigading**](https://github.com/fazrigading) - *Main Issues fixer | Beta tester*
+- [**@fazrigading**](https://github.com/fazrigading) - *Main Issues fixer | Beta tester | Github Release Maintainer*
 - [**@ericiskoolbeans**](https://github.com/ericiskoolbeans) - *Beta Tester*
 - [**@chasem-dev**](https://github.com/chasem-dev) - *Issues fixer*
-- [**@crimera**](https://github.com/crimera) - *Issues fixer*  
-- [**@Citeli-py**](https://github.com/Citeli-py) - *Issues fixer*
 - [**@Rahul-Sahani04**](https://github.com/Rahul-Sahani04) - *Issues fixer*
-- [**@xSamiVS**](https://github.com/xSamiVS) - *Language Translator*
-- [**@BlackSystemCoder**](https://github.com/BlackSystemCoder) - *Language Translator*
+- [**@xSamiVS**](https://github.com/xSamiVS) - *Issues fixer | Language Translator*
+
+#### 🎟️ Fresh Contributors
+- [**@GreenKod**](https://github.com/GreenKod) - *Code refractor*
+- [**@Citeli-py**](https://github.com/Citeli-py) - *Linux fix & packages version in early release*
+- [**@crimera**](https://github.com/crimera) - *Generate new UUID for new username string feature*
+- [**@letha11**](https://github.com/letha11) - *CSS filename typo fix*
+- [**@colbster937**](https://github.com/colbster937) - *Icon upscaler*
+- [**@ArnavSingh77**](https://github.com/ArnavSingh77) - *Close game launcher on start feature, improve app termination behavior*
+- [**@TalesAmaral**](https://github.com/TalesAmaral) - *BUILD.md link fix in README.md*
+
+#### 🌐 Language Translators
+- [**@BlackSystemCoder**](https://github.com/BlackSystemCoder) - *Russian Language Translator*
+- [**@walti0**](https://github.com/walti0) - *Polish Language Translator*
 
 ---
 

@@ -2,7 +2,7 @@
 # Maintainer: Fazri Gading <fazrigading@gmail.com>
 # This PKGBUILD is for Github Releases
 pkgname=Hytale-F2P
-pkgver=2.1.2
+pkgver=2.2.0
 pkgrel=1
 pkgdesc="Hytale-F2P - unofficial Hytale Launcher for free to play with multiplayer support"
 arch=('x86_64')

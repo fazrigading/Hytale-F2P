@@ -15,7 +15,7 @@ function getAppDir() {
 }
 
 /**
- * Get centralized UserData saves directory (NEW in 2.1.2)
+ * Get centralized UserData saves directory (NEW in 2.2.0)
  * UserData is now stored separately from game installation
  */
 function getHytaleSavesDir() {
@@ -233,7 +233,7 @@ async function getModsPath(customInstallPath = null) {
 
 function getProfilesDir(customInstallPath = null) {
   try {
-    // NEW 2.1.2: Use centralized UserData location
+    // NEW 2.2.0: Use centralized UserData location
     const userDataPath = getHytaleSavesDir();
     const profilesDir = path.join(userDataPath, 'Profiles');
     

@@ -327,7 +327,7 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
   console.log(`[UpdateGameFiles] Switching from ${oldBranch} to ${branch}`);
   
   try {
-    // NEW 2.1.2: Ensure UserData migration to centralized location
+    // NEW 2.2.0: Ensure UserData migration to centralized location
     try {
       console.log('[UpdateGameFiles] Ensuring UserData migration...');
       const migrationResult = await migrateUserDataToCentralized();
@@ -403,7 +403,7 @@ async function updateGameFiles(newVersion, progressCallback, gameDir = GAME_DIR,
     const logoResult = await downloadAndReplaceLogo(gameDir, progressCallback);
     console.log('Logo@2x.png update result after update:', logoResult);
 
-    // NEW 2.1.2: No longer create UserData in game installation
+    // NEW 2.2.0: No longer create UserData in game installation
     // UserData is now in centralized location (getUserDataPath())
     console.log('[UpdateGameFiles] UserData is managed in centralized location');
 
@@ -453,7 +453,7 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   const customGameDir = path.join(customAppDir, branch, 'package', 'game', 'latest');
   const customJreDir = path.join(customAppDir, branch, 'package', 'jre', 'latest');
 
-  // NEW 2.1.2: Ensure UserData migration to centralized location
+  // NEW 2.2.0: Ensure UserData migration to centralized location
   try {
     console.log('[InstallGame] Ensuring UserData migration...');
     const migrationResult = await migrateUserDataToCentralized();
@@ -565,7 +565,7 @@ async function installGame(playerName = 'Player', progressCallback, javaPathOver
   const logoResult = await downloadAndReplaceLogo(customGameDir, progressCallback);
   console.log('Logo@2x.png update result after installation:', logoResult);
 
-  // NEW 2.1.2: No longer create UserData in game installation
+  // NEW 2.2.0: No longer create UserData in game installation
   // UserData is managed in centralized location (getUserDataPath())
   console.log('[InstallGame] UserData is managed in centralized location');
 

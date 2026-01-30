@@ -118,7 +118,7 @@ async function launchGame(playerName = 'Player', progressCallback, javaPathOverr
   const customGameDir = path.join(customAppDir, branch, 'package', 'game', 'latest');
   const customJreDir = path.join(customAppDir, branch, 'package', 'jre', 'latest');
   
-  // NEW 2.1.2: Use centralized UserData location
+  // NEW 2.2.0: Use centralized UserData location
   const userDataDir = getUserDataPath();
 
   const gameLatest = customGameDir;
