@@ -11,7 +11,8 @@ const i18n = (() => {
     { code: 'pt-BR', name: 'Portuguese (Brazil)' },
     { code: 'ru-RU', name: 'Russian (Russia)' },
     { code: 'sv-SE', name: 'Swedish (Sweden)' },
-    { code: 'tr-TR', name: 'Turkish (Turkey)' }
+    { code: 'tr-TR', name: 'Turkish (Turkey)' },
+    { code: 'id-ID', name: 'Indonesian (Indonesia)' }
   ];
 
   // Load single language file
