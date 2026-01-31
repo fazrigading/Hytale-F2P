@@ -304,9 +304,9 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
 
     // Common system libzstd paths
     const systemLibzstdPaths = [
+      '/usr/lib64/libzstd.so.1',                  // Fedora/RHEL
       '/usr/lib/libzstd.so.1',                    // Arch Linux, Steam Deck
-      '/usr/lib/x86_64-linux-gnu/libzstd.so.1',   // Debian/Ubuntu
-      '/usr/lib64/libzstd.so.1'                   // Fedora/RHEL
+      '/usr/lib/x86_64-linux-gnu/libzstd.so.1'    // Debian/Ubuntu
     ];
 
     let systemLibzstd = null;
