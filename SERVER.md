@@ -2,7 +2,7 @@
 
 Play with friends online! This guide covers both easy in-game hosting and advanced dedicated server setup.
 
-### **DOWNLOAD SERVER FILES (JAR/RAR/SCRIPTS) HERE: https://discord.gg/MEyWUxt77m** 
+### **DOWNLOAD SERVER FILES (JAR/RAR/SCRIPTS) HERE: https://discord.gg/hf2pdc** 
 
 **Table of Contents**
 
@@ -501,4 +501,5 @@ See [Docker documentation](https://github.com/Hybrowse/hytale-server-docker) for
 - Hytale F2P Project
 - [Hybrowse Docker Image](https://github.com/Hybrowse/hytale-server-docker)
 - Auth Server: sanasol.ws
+
 
