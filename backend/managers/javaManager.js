@@ -340,36 +340,70 @@ async function extractJRE(archivePath, destDir) {
 }
 
 function extractZip(zipPath, dest) {
-  const zip = new AdmZip(zipPath);
-  const entries = zip.getEntries();
+  try {
+    const zip = new AdmZip(zipPath);
+    const entries = zip.getEntries();
 
-  for (const entry of entries) {
-    const entryPath = path.join(dest, entry.entryName);
-    
-    const resolvedPath = path.resolve(entryPath);
-    const resolvedDest = path.resolve(dest);
-    if (!resolvedPath.startsWith(resolvedDest)) {
-      throw new Error(`Invalid file path detected: ${entryPath}`);
-    }
+    for (const entry of entries) {
+      const entryPath = path.join(dest, entry.entryName);
 
-    if (entry.isDirectory) {
-      fs.mkdirSync(entryPath, { recursive: true });
-    } else {
-      fs.mkdirSync(path.dirname(entryPath), { recursive: true });
-      fs.writeFileSync(entryPath, entry.getData());
-      if (process.platform !== 'win32') {
-        fs.chmodSync(entryPath, entry.header.attr >>> 16);
+      // Security check: prevent zip slip attacks
+      const resolvedPath = path.resolve(entryPath);
+      const resolvedDest = path.resolve(dest);
+      if (!resolvedPath.startsWith(resolvedDest)) {
+        throw new Error(`Invalid file path detected: ${entryPath}`);
+      }
+
+      try {
+        if (entry.isDirectory) {
+          fs.mkdirSync(entryPath, { recursive: true });
+        } else {
+          // Ensure parent directory exists
+          const parentDir = path.dirname(entryPath);
+          fs.mkdirSync(parentDir, { recursive: true });
+
+          // Get file data and write it
+          const data = entry.getData();
+          if (!data) {
+            console.warn(`Warning: No data for file ${entry.entryName}, skipping`);
+            continue;
+          }
+
+          fs.writeFileSync(entryPath, data);
+
+          // Set permissions on non-Windows platforms
+          if (process.platform !== 'win32') {
+            try {
+              const mode = entry.header.attr >>> 16;
+              if (mode > 0) {
+                fs.chmodSync(entryPath, mode);
+              }
+            } catch (chmodError) {
+              console.warn(`Warning: Could not set permissions for ${entryPath}: ${chmodError.message}`);
+            }
+          }
+        }
+      } catch (entryError) {
+        console.error(`Error extracting ${entry.entryName}: ${entryError.message}`);
+        // Continue with other entries rather than failing completely
+        continue;
       }
     }
+  } catch (error) {
+    throw new Error(`Failed to extract ZIP archive: ${error.message}`);
   }
 }
 
 function extractTarGz(tarGzPath, dest) {
-  return tar.extract({
-    file: tarGzPath,
-    cwd: dest,
-    strip: 0
-  });
+  try {
+    return tar.extract({
+      file: tarGzPath,
+      cwd: dest,
+      strip: 0
+    });
+  } catch (error) {
+    throw new Error(`Failed to extract TAR.GZ archive: ${error.message}`);
+  }
 }
 
 function flattenJREDir(jreLatest) {

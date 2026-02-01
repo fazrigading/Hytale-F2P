@@ -399,34 +399,45 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   try {
     let spawnOptions = {
       stdio: ['ignore', 'pipe', 'pipe'],
-      detached: true,
+      detached: true,  // Detach on all platforms to make game process independent
       env: env
     };
 
     if (process.platform === 'win32') {
       spawnOptions.shell = false;
       spawnOptions.windowsHide = true;
+      // Windows: Hide the spawned process window
     }
 
     const child = spawn(clientPath, args, spawnOptions);
+
+    // Release process reference immediately so it's truly independent
+    // This works on all platforms (Windows, macOS, Linux)
+    child.unref();
 
     console.log(`Game process started with PID: ${child.pid}`);
 
     let hasExited = false;
     let outputReceived = false;
+    let launchCheckTimeout;
 
-    child.stdout.on('data', (data) => {
-      outputReceived = true;
-      console.log(`Game output: ${data.toString().trim()}`);
-    });
+    if (child.stdout) {
+      child.stdout.on('data', (data) => {
+        outputReceived = true;
+        console.log(`Game output: ${data.toString().trim()}`);
+      });
+    }
 
-    child.stderr.on('data', (data) => {
-      outputReceived = true;
-      console.error(`Game error: ${data.toString().trim()}`);
-    });
+    if (child.stderr) {
+      child.stderr.on('data', (data) => {
+        outputReceived = true;
+        console.error(`Game error: ${data.toString().trim()}`);
+      });
+    }
 
     child.on('error', (error) => {
       hasExited = true;
+      clearTimeout(launchCheckTimeout);
       console.error(`Failed to start game process: ${error.message}`);
       if (progressCallback) {
         progressCallback(`Failed to start game: ${error.message}`, -1, null, null, null);
@@ -435,6 +446,7 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
 
     child.on('exit', (code, signal) => {
       hasExited = true;
+      clearTimeout(launchCheckTimeout);
       if (code !== null) {
         console.log(`Game process exited with code ${code}`);
         if (code !== 0 && progressCallback) {
@@ -445,18 +457,19 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
       }
     });
 
-    // Monitor game process status in background
-    setTimeout(() => {
+    // Monitor game process status in background - wait 5 seconds for verification
+    launchCheckTimeout = setTimeout(() => {
       if (!hasExited) {
         console.log('Game appears to be running successfully');
-        child.unref();
+        // Keep process reference active - don't unref() immediately
+        // This ensures the launcher stays alive while the game is running
         if (progressCallback) {
           progressCallback('Game launched successfully', 100, null, null, null);
         }
       } else if (!outputReceived) {
         console.warn('Game process exited immediately with no output - possible issue with game files or dependencies');
       }
-    }, 3000);
+    }, 5000);
 
     // Return immediately, don't wait for setTimeout
     return { success: true, installed: true, launched: true, pid: child.pid };

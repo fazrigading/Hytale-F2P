@@ -107,9 +107,41 @@ async function toggleDiscordRPC(enabled) {
   } else if (!enabled && discordRPC) {
     try {
       console.log('Disconnecting Discord RPC...');
-      discordRPC.clearActivity();
-      await new Promise(r => setTimeout(r, 100));
-      discordRPC.destroy();
+      
+      // Check if Discord RPC is still connected before trying to use it
+      if (discordRPC && discordRPC.transport && discordRPC.transport.socket) {
+        // Add timeout to prevent hanging
+        const clearActivityPromise = discordRPC.clearActivity();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Discord RPC clearActivity timeout')), 1000)
+        );
+        
+        try {
+          await Promise.race([clearActivityPromise, timeoutPromise]);
+          await new Promise(r => setTimeout(r, 100));
+        } catch (timeoutErr) {
+          console.log('Discord RPC clearActivity timed out:', timeoutErr.message);
+        }
+      } else {
+        console.log('Discord RPC already disconnected');
+      }
+      
+      // Destroy - wrap in try-catch to handle library errors
+      if (discordRPC) {
+        try {
+          if (typeof discordRPC.destroy === 'function') {
+            const destroyPromise = discordRPC.destroy();
+            if (destroyPromise && typeof destroyPromise.catch === 'function') {
+              destroyPromise.catch(err => {
+                console.log('Discord RPC destroy error (ignored):', err.message);
+              });
+            }
+          }
+        } catch (destroyErr) {
+          console.log('Error destroying Discord RPC (ignored):', destroyErr.message);
+        }
+      }
+      
       console.log('Discord RPC disconnected successfully');
     } catch (error) {
       console.error('Error disconnecting Discord RPC:', error.message);
@@ -424,9 +456,43 @@ async function cleanupDiscordRPC() {
   if (!discordRPC) return;
   try {
     console.log('Cleaning up Discord RPC...');
-    discordRPC.clearActivity();
-    await new Promise(r => setTimeout(r, 100));
-    discordRPC.destroy();
+    
+    // Check if Discord RPC is still connected before trying to use it
+    if (discordRPC && discordRPC.transport && discordRPC.transport.socket) {
+      // Add timeout to prevent hanging if Discord is unresponsive
+      const clearActivityPromise = discordRPC.clearActivity();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Discord RPC clearActivity timeout')), 1000)
+      );
+      
+      try {
+        await Promise.race([clearActivityPromise, timeoutPromise]);
+        await new Promise(r => setTimeout(r, 100));
+      } catch (timeoutErr) {
+        console.log('Discord RPC clearActivity timed out, proceeding with cleanup:', timeoutErr.message);
+      }
+    } else {
+      console.log('Discord RPC already disconnected, skipping clearActivity');
+    }
+    
+    // Destroy and cleanup - wrap in try-catch to handle library errors
+    if (discordRPC) {
+      try {
+        if (typeof discordRPC.destroy === 'function') {
+          // destroy() may return a promise that rejects, so handle it
+          const destroyPromise = discordRPC.destroy();
+          if (destroyPromise && typeof destroyPromise.catch === 'function') {
+            // If it's a promise, catch any rejections silently
+            destroyPromise.catch(err => {
+              console.log('Discord RPC destroy error (ignored):', err.message);
+            });
+          }
+        }
+      } catch (destroyErr) {
+        console.log('Error destroying Discord RPC client (ignored):', destroyErr.message);
+      }
+    }
+    
     console.log('Discord RPC cleaned up successfully');
   } catch (error) {
     console.log('Error cleaning up Discord RPC:', error.message);

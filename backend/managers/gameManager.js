@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { execFile } = require('child_process');
+const { execFile, exec } = require('child_process');
+const { promisify } = require('util');
 const { getResolvedAppDir, findClientPath, findUserDataPath, findUserDataRecursive, GAME_DIR, CACHE_DIR, TOOLS_DIR } = require('../core/paths');
 const { getOS, getArch } = require('../utils/platformUtils');
 const { downloadFile, retryDownload, retryStalledDownload, MAX_AUTOMATIC_STALL_RETRIES } = require('../utils/fileManager');
@@ -11,6 +12,57 @@ const { downloadAndReplaceHomePageUI, downloadAndReplaceLogo } = require('./uiFi
 const { saveUsername, saveInstallPath, loadJavaPath, CONFIG_FILE, loadConfig, loadVersionBranch, saveVersionClient, loadVersionClient } = require('../core/config');
 const { resolveJavaPath, detectSystemJava, downloadJRE, getJavaExec, getBundledJavaPath } = require('./javaManager');
 const { getUserDataPath, migrateUserDataToCentralized } = require('../utils/userDataMigration');
+const userDataBackup = require('../utils/userDataBackup');
+
+const execAsync = promisify(exec);
+
+// Helper function to check if game processes are running
+async function isGameRunning() {
+  try {
+    let command;
+    if (process.platform === 'win32') {
+      // On Windows, check for HytaleClient.exe processes
+      command = 'tasklist /FI "IMAGENAME eq HytaleClient.exe" /NH';
+    } else if (process.platform === 'darwin') {
+      // On macOS, check for HytaleClient processes
+      command = 'pgrep -f HytaleClient';
+    } else {
+      // On Linux, check for HytaleClient processes
+      command = 'pgrep -f HytaleClient';
+    }
+
+    const { stdout } = await execAsync(command);
+    return stdout.trim().length > 0;
+  } catch (error) {
+    // If command fails, assume no processes are running
+    return false;
+  }
+}
+
+// Helper function to safely remove directory with retry logic
+async function safeRemoveDirectory(dirPath, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      if (fs.existsSync(dirPath)) {
+        fs.rmSync(dirPath, { recursive: true, force: true });
+        console.log(`Successfully removed directory: ${dirPath}`);
+      }
+      return; // Success, exit the loop
+    } catch (error) {
+      console.warn(`Attempt ${attempt}/${maxRetries} failed to remove ${dirPath}: ${error.message}`);
+      
+      if (attempt < maxRetries) {
+        // Wait before retrying (exponential backoff)
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        // Last attempt failed, throw the error
+        throw new Error(`Failed to remove directory ${dirPath} after ${maxRetries} attempts: ${error.message}`);
+      }
+    }
+  }
+}
 
 async function downloadPWR(branch = 'release', fileName = '7.pwr', progressCallback, cacheDir = CACHE_DIR, manualRetry = false) {
   const osName = getOS();
@@ -589,8 +641,14 @@ async function uninstallGame() {
     throw new Error('Game is not installed');
   }
 
+  // Check if game is running before attempting to delete files
+  const gameRunning = await isGameRunning();
+  if (gameRunning) {
+    throw new Error('Cannot uninstall game while it is running. Please close the game first.');
+  }
+
   try {
-    fs.rmSync(appDir, { recursive: true, force: true });
+    await safeRemoveDirectory(appDir);
     console.log('Game uninstalled successfully - removed entire HytaleF2P folder');
 
     if (fs.existsSync(CONFIG_FILE)) {
@@ -672,14 +730,31 @@ async function repairGame(progressCallback, branchOverride = null) {
     progressCallback('Removing old game files...', 30, null, null, null);
   }
 
-  // Delete Game and Cache Directory
+  // Check if game is running before attempting to delete files
+  const gameRunning = await isGameRunning();
+  if (gameRunning) {
+    console.warn('[RepairGame] Game appears to be running. This may cause permission errors during repair.');
+    console.log('[RepairGame] Please close the game before repairing, or wait for the repair to complete.');
+  }
+
+  // Delete Game and Cache Directory with retry logic
   console.log('Removing corrupted game files...');
-  fs.rmSync(gameDir, { recursive: true, force: true });
+  try {
+    await safeRemoveDirectory(gameDir);
+  } catch (error) {
+    console.error(`[RepairGame] Failed to remove game directory: ${error.message}`);
+    throw new Error(`Cannot repair game: ${error.message}. Please ensure the game is not running and try again.`);
+  }
 
   const cacheDir = path.join(appDir, 'cache');
   if (fs.existsSync(cacheDir)) {
     console.log('Clearing cache directory...');
-    fs.rmSync(cacheDir, { recursive: true, force: true });
+    try {
+      await safeRemoveDirectory(cacheDir);
+    } catch (error) {
+      console.warn(`[RepairGame] Failed to clear cache directory: ${error.message}`);
+      // Don't throw here, cache cleanup is not critical
+    }
   }
 
   console.log('Reinstalling game files...');
