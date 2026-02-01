@@ -15,7 +15,6 @@ function escapeHtml(text) {
  */
 async function loadFeaturedServers() {
   const featuredContainer = document.getElementById('featuredServersList');
-  const myServersContainer = document.getElementById('myServersList');
   
   try {
     console.log('[FeaturedServers] Fetching from', FEATURED_SERVERS_API);
@@ -54,6 +53,15 @@ async function loadFeaturedServers() {
         const escapedName = escapeHtml(server.Name || 'Unknown Server');
         const escapedAddress = escapeHtml(server.Address || '');
         const bannerUrl = server.img_Banner || 'https://via.placeholder.com/400x240/1e293b/ffffff?text=Server+Banner';
+        const discordUrl = server.discord || '';
+        
+        // Build Discord button HTML if discord link exists
+        const discordButton = discordUrl ? `
+          <button class="server-discord-btn" onclick="openServerDiscord('${discordUrl}')">
+            <i class="fab fa-discord"></i>
+            <span>Discord</span>
+          </button>
+        ` : '';
         
         return `
           <div class="featured-server-card">
@@ -67,10 +75,13 @@ async function loadFeaturedServers() {
               <h3 class="featured-server-name">${escapedName}</h3>
               <div class="featured-server-address">
                 <span class="server-address-text">${escapedAddress}</span>
-                <button class="copy-address-btn" onclick="copyServerAddress('${escapedAddress}', this)">
-                  <i class="fas fa-copy"></i>
-                  <span>Copy</span>
-                </button>
+                <div class="server-action-buttons">
+                  <button class="copy-address-btn" onclick="copyServerAddress('${escapedAddress}', this)">
+                    <i class="fas fa-copy"></i>
+                    <span>Copy</span>
+                  </button>
+                  ${discordButton}
+                </div>
               </div>
             </div>
           </div>
@@ -80,13 +91,6 @@ async function loadFeaturedServers() {
       featuredContainer.innerHTML = featuredHTML;
     }
     
-    // Show "Coming Soon" for my servers
-    myServersContainer.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 1.2rem;">
-        <p>Coming Soon</p>
-      </div>
-    `;
-    
   } catch (error) {
     console.error('[FeaturedServers] Error loading servers:', error);
     featuredContainer.innerHTML = `
@@ -94,11 +98,6 @@ async function loadFeaturedServers() {
         <i class="fas fa-exclamation-triangle fa-2x" style="color: #ef4444;"></i>
         <p>Failed to load servers</p>
         <p style="font-size: 0.9rem; color: #64748b;">${error.message}</p>
-      </div>
-    `;
-    myServersContainer.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #94a3b8; font-size: 1.2rem;">
-        <p>Coming Soon</p>
       </div>
     `;
   }
@@ -148,6 +147,22 @@ async function copyServerAddress(address, button) {
     }
     
     document.body.removeChild(textArea);
+  }
+}
+
+/**
+ * Open server Discord in external browser
+ */
+function openServerDiscord(discordUrl) {
+  try {
+    console.log('[FeaturedServers] Opening Discord:', discordUrl);
+    if (window.electronAPI && window.electronAPI.openExternal) {
+      window.electronAPI.openExternal(discordUrl);
+    } else {
+      window.open(discordUrl, '_blank');
+    }
+  } catch (error) {
+    console.error('[FeaturedServers] Failed to open Discord link:', error);
   }
 }
 
