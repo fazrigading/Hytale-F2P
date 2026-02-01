@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { getProxyDownloadStream } = require('./proxyClient');
 
 // Domain configuration
 const ORIGINAL_DOMAIN = 'hytale.com';
@@ -605,9 +606,6 @@ class ClientPatcher {
     console.log('Downloading pre-patched HytaleServer.jar...');
 
     try {
-      const https = require('https');
-      
-      // Use different URL for pre-release vs release
       let url;
       if (branch === 'pre-release') {
         url = 'https://patcher.authbp.xyz/download/patched_prerelease';
@@ -617,41 +615,28 @@ class ClientPatcher {
         console.log('  Using release patched server from:', url);
       }
 
+      const file = fs.createWriteStream(serverPath);
+      let totalSize = 0;
+      let downloaded = 0;
+
+      const stream = await getProxyDownloadStream(url, (chunk, downloadedBytes, total) => {
+        downloaded = downloadedBytes;
+        totalSize = total;
+        if (progressCallback && totalSize) {
+          const percent = 30 + Math.floor((downloaded / totalSize) * 60);
+          progressCallback(`Downloading... ${(downloaded / 1024 / 1024).toFixed(2)} MB`, percent);
+        }
+      });
+
+      stream.pipe(file);
+
       await new Promise((resolve, reject) => {
-        const handleResponse = (response) => {
-          if (response.statusCode === 302 || response.statusCode === 301) {
-            https.get(response.headers.location, handleResponse).on('error', reject);
-            return;
-          }
-
-          if (response.statusCode !== 200) {
-            reject(new Error(`Failed to download: HTTP ${response.statusCode}`));
-            return;
-          }
-
-          const file = fs.createWriteStream(serverPath);
-          const totalSize = parseInt(response.headers['content-length'], 10);
-          let downloaded = 0;
-
-          response.on('data', (chunk) => {
-            downloaded += chunk.length;
-            if (progressCallback && totalSize) {
-              const percent = 30 + Math.floor((downloaded / totalSize) * 60);
-              progressCallback(`Downloading... ${(downloaded / 1024 / 1024).toFixed(2)} MB`, percent);
-            }
-          });
-
-          response.pipe(file);
-          file.on('finish', () => {
-            file.close();
-            resolve();
-          });
-        };
-
-        https.get(url, handleResponse).on('error', (err) => {
-          fs.unlink(serverPath, () => {});
-          reject(err);
+        file.on('finish', () => {
+          file.close();
+          resolve();
         });
+        file.on('error', reject);
+        stream.on('error', reject);
       });
 
       console.log('  Download successful');
