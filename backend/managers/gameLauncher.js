@@ -339,13 +339,12 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   console.log('Starting game...');
   console.log(`Command: "${clientPath}" ${args.join(' ')}`);
 
-   const env = { ...process.env };
+  const env = { ...process.env };
 
-   const waylandEnv = setupWaylandEnvironment();
-   Object.assign(env, waylandEnv);
-
-   const gpuEnv = setupGpuEnvironment(gpuPreference);
-   Object.assign(env, gpuEnv);
+  const waylandEnv = setupWaylandEnvironment();
+  Object.assign(env, waylandEnv);
+  const gpuEnv = setupGpuEnvironment(gpuPreference);
+  Object.assign(env, gpuEnv);
 
   // Linux: Replace bundled libzstd.so with system version to fix glibc 2.41+ crash
   // The bundled libzstd causes "free(): invalid pointer" on Steam Deck / Ubuntu LTS
@@ -396,45 +395,16 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
     }
   }
 
-  // ==========================================================================
-  // STEP 4: Check if game is already running (prevent duplicate launches)
-  // ==========================================================================
-  const GAME_RUNNING_MARKER = path.join(userDataDir, '.game_running');
-  
-  if (fs.existsSync(GAME_RUNNING_MARKER)) {
-    try {
-      const existingPid = fs.readFileSync(GAME_RUNNING_MARKER, 'utf8').trim();
-      const error = new Error(`Game is already running (PID: ${existingPid}). Please close it before launching again.`);
-      console.error('[Launcher]', error.message);
-      if (progressCallback) {
-        progressCallback(error.message, -1, null, null, null);
-      }
-      throw error;
-    } catch (err) {
-      if (err.message.includes('already running')) {
-        throw err;
-      }
-      // File is corrupted, clean it up and continue
-      console.log('Game running marker corrupted, cleaning up and continuing...');
-      try {
-        fs.unlinkSync(GAME_RUNNING_MARKER);
-      } catch (unlinkErr) {
-        // Ignore if file is already gone
-      }
-    }
-  }
-
   try {
     let spawnOptions = {
       stdio: ['ignore', 'pipe', 'pipe'],
-      detached: true,  // Detach on all platforms to make game process independent
+      detached: true,
       env: env
     };
 
     if (process.platform === 'win32') {
       spawnOptions.shell = false;
       spawnOptions.windowsHide = true;
-      // Windows: Hide the spawned process window
     }
 
     const child = spawn(clientPath, args, spawnOptions);
@@ -442,15 +412,6 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
     // Release process reference immediately so it's truly independent
     // This works on all platforms (Windows, macOS, Linux)
     child.unref();
-
-    // Write game running marker file to track process
-    try {
-      fs.writeFileSync(GAME_RUNNING_MARKER, child.pid.toString());
-      console.log(`Game running marker created: ${GAME_RUNNING_MARKER} (PID: ${child.pid})`);
-    } catch (markerErr) {
-      console.warn('Failed to create game running marker:', markerErr.message);
-      // Continue anyway - not critical if marker fails
-    }
 
     console.log(`Game process started with PID: ${child.pid}`);
 
@@ -461,14 +422,16 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
     if (child.stdout) {
       child.stdout.on('data', (data) => {
         outputReceived = true;
-        console.log(`Game output: ${data.toString().trim()}`);
+        const msg = data.toString().trim();
+        console.log(`Game output: ${msg}`);
       });
     }
 
     if (child.stderr) {
       child.stderr.on('data', (data) => {
         outputReceived = true;
-        console.error(`Game error: ${data.toString().trim()}`);
+        const msg = data.toString().trim();
+        console.error(`Game error: ${msg}`);
       });
     }
 
@@ -485,20 +448,13 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
       hasExited = true;
       clearTimeout(launchCheckTimeout);
       
-      // Clean up game running marker file
-      try {
-        if (fs.existsSync(GAME_RUNNING_MARKER)) {
-          fs.unlinkSync(GAME_RUNNING_MARKER);
-          console.log('Game running marker removed');
-        }
-      } catch (markerCleanupErr) {
-        console.warn('Failed to remove game running marker:', markerCleanupErr.message);
-      }
-      
       if (code !== null) {
         console.log(`Game process exited with code ${code}`);
-        if (code !== 0 && progressCallback) {
-          progressCallback(`Game exited with error code ${code}`, -1, null, null, null);
+        if (code !== 0) {
+          console.error(`[Launcher] Game crashed or exited with error code ${code}`);
+          if (progressCallback) {
+            progressCallback(`Game exited with error code ${code}`, -1, null, null, null);
+          }
         }
       } else if (signal) {
         console.log(`Game process terminated by signal ${signal}`);
