@@ -10,7 +10,7 @@
 [![GitHub Downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-orange?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
 ![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
-[![Version](https://img.shields.io/badge/Version-2.2.0-green?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
+[![Version](https://img.shields.io/badge/Version-2.2.1-green?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
 
 [![GitHub stars](https://img.shields.io/github/stars/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/network/members)

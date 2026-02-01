@@ -51,7 +51,7 @@ body:
     attributes:
       label: Version
       description: What version of the launcher are you running?
-      placeholder: "e.g. \"v2.2.0 stable\""
+      placeholder: "e.g. \"v2.2.1\""
     validations:
       required: true
 

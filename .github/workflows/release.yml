@@ -159,7 +159,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           files: |
             artifacts/arch-package/*.pkg.tar.zst
-            artifacts/arch-package/*.src.tar.zst
             artifacts/arch-package/.SRCINFO
             artifacts/linux-builds/**/*
             artifacts/windows-builds/**/*
