@@ -8,7 +8,7 @@ const SECRET_KEY = process.env.HF2P_SECRET_KEY || 'your_secret_key_here_for_jwt'
 const USE_DIRECT_FALLBACK = process.env.HF2P_USE_FALLBACK !== 'false';
 const DIRECT_TIMEOUT = 7000; // 7 seconds timeout
 
-console.log('[ProxyClient] Initialized with proxy URL:', PROXY_URL);
+console.log('[ProxyClient] Initialized with proxy URL:', PROXY_URL ? 'YES' : 'NO');
 console.log('[ProxyClient] Secret key configured:', SECRET_KEY ? 'YES' : 'NO');
 console.log('[ProxyClient] Direct connection fallback:', USE_DIRECT_FALLBACK ? 'ENABLED' : 'DISABLED');
 console.log('[ProxyClient] Direct timeout before fallback:', DIRECT_TIMEOUT / 1000, 'seconds');
@@ -33,7 +33,7 @@ async function directRequest(url, options = {}) {
   const controller = new AbortController();
   
   const timeoutId = setTimeout(() => {
-    console.warn('[ProxyClient] ⏱️ TIMEOUT! Aborting direct request after', timeoutMs, 'ms');
+    console.warn('[ProxyClient] TIMEOUT! Aborting direct request after', timeoutMs, 'ms');
     controller.abort();
   }, timeoutMs);
   
@@ -222,7 +222,7 @@ function directDownloadStream(url, onData) {
       });
       
       req.on('timeout', () => {
-        console.warn('[ProxyClient] ⏱️ TIMEOUT! Direct download timed out after', DIRECT_TIMEOUT, 'ms');
+        console.warn('[ProxyClient] TIMEOUT! Direct download timed out after', DIRECT_TIMEOUT, 'ms');
         req.destroy();
         const timeoutError = new Error('ETIMEDOUT: Direct connection timeout');
         timeoutError.code = 'ETIMEDOUT';
