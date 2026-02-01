@@ -396,6 +396,34 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
     }
   }
 
+  // ==========================================================================
+  // STEP 4: Check if game is already running (prevent duplicate launches)
+  // ==========================================================================
+  const GAME_RUNNING_MARKER = path.join(userDataDir, '.game_running');
+  
+  if (fs.existsSync(GAME_RUNNING_MARKER)) {
+    try {
+      const existingPid = fs.readFileSync(GAME_RUNNING_MARKER, 'utf8').trim();
+      const error = new Error(`Game is already running (PID: ${existingPid}). Please close it before launching again.`);
+      console.error('[Launcher]', error.message);
+      if (progressCallback) {
+        progressCallback(error.message, -1, null, null, null);
+      }
+      throw error;
+    } catch (err) {
+      if (err.message.includes('already running')) {
+        throw err;
+      }
+      // File is corrupted, clean it up and continue
+      console.log('Game running marker corrupted, cleaning up and continuing...');
+      try {
+        fs.unlinkSync(GAME_RUNNING_MARKER);
+      } catch (unlinkErr) {
+        // Ignore if file is already gone
+      }
+    }
+  }
+
   try {
     let spawnOptions = {
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -414,6 +442,15 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
     // Release process reference immediately so it's truly independent
     // This works on all platforms (Windows, macOS, Linux)
     child.unref();
+
+    // Write game running marker file to track process
+    try {
+      fs.writeFileSync(GAME_RUNNING_MARKER, child.pid.toString());
+      console.log(`Game running marker created: ${GAME_RUNNING_MARKER} (PID: ${child.pid})`);
+    } catch (markerErr) {
+      console.warn('Failed to create game running marker:', markerErr.message);
+      // Continue anyway - not critical if marker fails
+    }
 
     console.log(`Game process started with PID: ${child.pid}`);
 
@@ -447,6 +484,17 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
     child.on('exit', (code, signal) => {
       hasExited = true;
       clearTimeout(launchCheckTimeout);
+      
+      // Clean up game running marker file
+      try {
+        if (fs.existsSync(GAME_RUNNING_MARKER)) {
+          fs.unlinkSync(GAME_RUNNING_MARKER);
+          console.log('Game running marker removed');
+        }
+      } catch (markerCleanupErr) {
+        console.warn('Failed to remove game running marker:', markerCleanupErr.message);
+      }
+      
       if (code !== null) {
         console.log(`Game process exited with code ${code}`);
         if (code !== 0 && progressCallback) {
