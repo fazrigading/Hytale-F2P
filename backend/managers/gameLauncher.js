@@ -118,6 +118,20 @@ function generateLocalTokens(uuid, name) {
 
 async function launchGame(playerNameOverride = null, progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto', branchOverride = null) {
   // ==========================================================================
+  // CACHE INVALIDATION: Clear proxyClient module cache to force fresh .env load
+  // This prevents stale cached values from affecting multiple launch attempts
+  // ==========================================================================
+  try {
+    const proxyClientPath = require.resolve('../utils/proxyClient');
+    if (require.cache[proxyClientPath]) {
+      delete require.cache[proxyClientPath];
+      console.log('[Launcher] Cleared proxyClient cache for fresh .env load');
+    }
+  } catch (cacheErr) {
+    console.warn('[Launcher] Could not clear proxyClient cache:', cacheErr.message);
+  }
+
+  // ==========================================================================
   // STEP 1: Validate player identity FIRST (before any other operations)
   // ==========================================================================
   const launchState = checkLaunchReady();
@@ -345,7 +359,6 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
   Object.assign(env, waylandEnv);
   const gpuEnv = setupGpuEnvironment(gpuPreference);
   Object.assign(env, gpuEnv);
-
   // Linux: Replace bundled libzstd.so with system version to fix glibc 2.41+ crash
   // The bundled libzstd causes "free(): invalid pointer" on Steam Deck / Ubuntu LTS
   if (process.platform === 'linux' && process.env.HYTALE_NO_LIBZSTD_FIX !== '1') {
@@ -461,21 +474,15 @@ exec "$REAL_JAVA" "\${ARGS[@]}"
       }
     });
 
-    // Monitor game process status in background - wait 5 seconds for verification
-    launchCheckTimeout = setTimeout(() => {
-      if (!hasExited) {
-        console.log('Game appears to be running successfully');
-        // Keep process reference active - don't unref() immediately
-        // This ensures the launcher stays alive while the game is running
-        if (progressCallback) {
-          progressCallback('Game launched successfully', 100, null, null, null);
-        }
-      } else if (!outputReceived) {
-        console.warn('Game process exited immediately with no output - possible issue with game files or dependencies');
-      }
-    }, 5000);
+    // Process is detached and unref'd - it runs independently from the launcher
+    // We cannot reliably detect if the game window actually appears from here,
+    // so we report success after spawning. stdout/stderr logging above provides debugging info.
+    console.log('Game process spawned and detached successfully');
+    if (progressCallback) {
+      progressCallback('Game launched successfully', 100, null, null, null);
+    }
 
-    // Return immediately, don't wait for setTimeout
+    // Return immediately after spawn
     return { success: true, installed: true, launched: true, pid: child.pid };
   } catch (spawnError) {
     console.error(`Error spawning game process: ${spawnError.message}`);
