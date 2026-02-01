@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const axios = require('axios');
 const https = require('https');
+const { PassThrough } = require('stream');
 
 const PROXY_URL = process.env.HF2P_PROXY_URL || 'your_proxy_url_here';
 const SECRET_KEY = process.env.HF2P_SECRET_KEY || 'your_secret_key_here_for_jwt';
@@ -72,17 +73,22 @@ function getProxyDownloadStream(url, onData) {
         return;
       }
 
-      const totalSize = parseInt(response.headers['content-length'], 10);
-      let downloaded = 0;
-
-      response.on('data', (chunk) => {
-        downloaded += chunk.length;
-        if (onData) {
+      if (onData) {
+        const totalSize = parseInt(response.headers['content-length'], 10);
+        let downloaded = 0;
+        
+        const passThrough = new PassThrough();
+        
+        response.on('data', (chunk) => {
+          downloaded += chunk.length;
           onData(chunk, downloaded, totalSize);
-        }
-      });
-
-      resolve(response);
+        });
+        
+        response.pipe(passThrough);
+        resolve(passThrough);
+      } else {
+        resolve(response);
+      }
     };
 
     protocol.get(options, handleResponse).on('error', reject);
