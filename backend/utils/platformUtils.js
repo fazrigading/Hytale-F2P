@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 
 function getOS() {
@@ -300,29 +300,81 @@ function detectGpuLinux() {
 function detectGpuWindows() {
   let output = '';
   let commandUsed = 'cim'; // Track which command succeeded
+  const POWERSHELL_TIMEOUT = 5000; // 5 second timeout to prevent hanging
 
   try {
+    // Use spawnSync with explicit timeout instead of execSync to avoid ghost processes
     // Fetch Name and AdapterRAM (VRAM in bytes)
-    output = execSync(
-      'powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Csv -NoTypeInformation"',
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
-    );
+    const result = spawnSync('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-Command',
+      'Get-CimInstance Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Csv -NoTypeInformation'
+    ], {
+      encoding: 'utf8',
+      timeout: POWERSHELL_TIMEOUT,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      windowsHide: true
+    });
+    
+    if (result.error) {
+      throw result.error;
+    }
+    
+    if (result.status === 0 && result.stdout) {
+      output = result.stdout;
+    } else {
+      throw new Error(`PowerShell returned status ${result.status || result.signal}`);
+    }
   } catch (e) {
     try {
       // Fallback to Get-WmiObject (Older PowerShell)
       commandUsed = 'wmi';
-      output = execSync(
-        'powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-WmiObject Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Csv -NoTypeInformation"',
-        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
-      );
+      const result = spawnSync('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-Command',
+        'Get-WmiObject Win32_VideoController | Select-Object Name, AdapterRAM | ConvertTo-Csv -NoTypeInformation'
+      ], {
+        encoding: 'utf8',
+        timeout: POWERSHELL_TIMEOUT,
+        stdio: ['ignore', 'pipe', 'ignore'],
+        windowsHide: true
+      });
+      
+      if (result.error) {
+        throw result.error;
+      }
+      
+      if (result.status === 0 && result.stdout) {
+        output = result.stdout;
+      } else {
+        throw new Error(`PowerShell WMI returned status ${result.status || result.signal}`);
+      }
     } catch (e2) {
       // Fallback to wmic (Deprecated, often missing on newer Windows)
       // Note: This fallback likely won't provide VRAM in the same reliable CSV format easily, 
       // so we stick to just getting the Name to at least allow the app to launch.
       try {
         commandUsed = 'wmic';
-        output = execSync('wmic path win32_VideoController get name', { encoding: 'utf8' });
+        const result = spawnSync('wmic.exe', ['path', 'win32_VideoController', 'get', 'name'], {
+          encoding: 'utf8',
+          timeout: POWERSHELL_TIMEOUT,
+          stdio: ['ignore', 'pipe', 'ignore'],
+          windowsHide: true
+        });
+        
+        if (result.error) {
+          throw result.error;
+        }
+        
+        if (result.status === 0 && result.stdout) {
+          output = result.stdout;
+        } else {
+          throw new Error(`wmic returned status ${result.status || result.signal}`);
+        }
       } catch (err) {
+        console.warn('All Windows GPU detection methods failed:', err.message);
         return { mode: 'unknown', vendor: 'none', integratedName: null, dedicatedName: null };
       }
     }
@@ -583,10 +635,27 @@ function getSystemTypeLinux() {
 }
 
 function getSystemTypeWindows() {
+  const POWERSHELL_TIMEOUT = 5000; // 5 second timeout
+  
   try {
-    const output = execSync(
-      'powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_SystemEnclosure | Select-Object -ExpandProperty ChassisTypes"', 
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    // Use spawnSync instead of execSync to avoid ghost processes
+    const result = spawnSync('powershell.exe', [
+      '-NoProfile',
+      '-ExecutionPolicy', 'Bypass',
+      '-Command',
+      'Get-CimInstance Win32_SystemEnclosure | Select-Object -ExpandProperty ChassisTypes'
+    ], {
+      encoding: 'utf8',
+      timeout: POWERSHELL_TIMEOUT,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      windowsHide: true
+    });
+    
+    if (result.error || result.status !== 0) {
+      throw new Error(`PowerShell failed: ${result.error?.message || result.signal}`);
+    }
+    
+    const output = (result.stdout || '').trim();
     // Output might be a single number or array.
     // Clean it up
     const types = output.split(/\s+/).map(t => parseInt(t)).filter(n => !isNaN(n));
@@ -601,9 +670,22 @@ function getSystemTypeWindows() {
   } catch (e) {
     // Fallback wmic
     try {
-      const output = execSync('wmic path win32_systemenclosure get chassistypes', { encoding: 'utf8' }).trim();
-      if (output.includes('8') || output.includes('9') || output.includes('10') || output.includes('14')) return 'laptop';
-    } catch (err) {}
+      const result = spawnSync('wmic.exe', ['path', 'win32_systemenclosure', 'get', 'chassistypes'], {
+        encoding: 'utf8',
+        timeout: POWERSHELL_TIMEOUT,
+        stdio: ['ignore', 'pipe', 'ignore'],
+        windowsHide: true
+      });
+      
+      if (result.status === 0 && result.stdout) {
+        const output = result.stdout.trim();
+        if (output.includes('8') || output.includes('9') || output.includes('10') || output.includes('14')) {
+          return 'laptop';
+        }
+      }
+    } catch (err) {
+      console.warn('System type detection failed:', err.message);
+    }
     return 'desktop';
   }
 }
