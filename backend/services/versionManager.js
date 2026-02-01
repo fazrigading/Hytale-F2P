@@ -2,7 +2,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const fs = require('fs');
 const { getOS, getArch } = require('../utils/platformUtils');
-const { proxyRequest } = require('../utils/proxyClient');
+const { smartRequest } = require('../utils/proxyClient');
 
 const BASE_PATCH_URL = 'https://game-patches.hytale.com/patches';
 const MANIFEST_API = 'https://files.hytalef2p.com/api/patch_manifest';
@@ -10,7 +10,7 @@ const MANIFEST_API = 'https://files.hytalef2p.com/api/patch_manifest';
 async function getLatestClientVersion(branch = 'release') {
   try {
     console.log(`Fetching latest client version from API (branch: ${branch})...`);
-    const response = await proxyRequest(`https://files.hytalef2p.com/api/version_client?branch=${branch}`, {
+    const response = await smartRequest(`https://files.hytalef2p.com/api/version_client?branch=${branch}`, {
       timeout: 40000,
       headers: {
         'User-Agent': 'Hytale-F2P-Launcher'
@@ -66,7 +66,7 @@ async function fetchPatchManifest(branch = 'release') {
   try {
     const os = getOS();
     const arch = getArch();
-    const response = await proxyRequest(`${MANIFEST_API}?branch=${branch}&os=${os}&arch=${arch}`, {
+    const response = await smartRequest(`${MANIFEST_API}?branch=${branch}&os=${os}&arch=${arch}`, {
       timeout: 10000
     });
     return response.data.patches || {};

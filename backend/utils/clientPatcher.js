@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { getProxyDownloadStream } = require('./proxyClient');
+const { smartDownloadStream } = require('./proxyClient');
 
 // Domain configuration
 const ORIGINAL_DOMAIN = 'hytale.com';
@@ -619,7 +619,7 @@ class ClientPatcher {
       let totalSize = 0;
       let downloaded = 0;
 
-      const stream = await getProxyDownloadStream(url, (chunk, downloadedBytes, total) => {
+      const stream = await smartDownloadStream(url, (chunk, downloadedBytes, total) => {
         downloaded = downloadedBytes;
         totalSize = total;
         if (progressCallback && totalSize) {

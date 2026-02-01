@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { downloadFile, findHomePageUIPath, findLogoPath } = require('../utils/fileManager');
-const { proxyRequest } = require('../utils/proxyClient');
+const { smartRequest } = require('../utils/proxyClient');
 
 async function downloadAndReplaceHomePageUI(gameDir, progressCallback) {
   try {
@@ -14,7 +14,7 @@ async function downloadAndReplaceHomePageUI(gameDir, progressCallback) {
     const homeUIUrl = 'https://files.hytalef2p.com/api/HomeUI';
     const tempHomePath = path.join(path.dirname(gameDir), 'HomePage_temp.ui');
 
-    const response = await proxyRequest(homeUIUrl, { responseType: 'arraybuffer' });
+    const response = await smartRequest(homeUIUrl, { responseType: 'arraybuffer' });
     fs.writeFileSync(tempHomePath, response.data);
 
     const existingHomePath = findHomePageUIPath(gameDir);
@@ -68,7 +68,7 @@ async function downloadAndReplaceLogo(gameDir, progressCallback) {
     const logoUrl = 'https://files.hytalef2p.com/api/Logo';
     const tempLogoPath = path.join(path.dirname(gameDir), 'Logo@2x_temp.png');
 
-    const response = await proxyRequest(logoUrl, { responseType: 'arraybuffer' });
+    const response = await smartRequest(logoUrl, { responseType: 'arraybuffer' });
     fs.writeFileSync(tempLogoPath, response.data);
 
     const existingLogoPath = findLogoPath(gameDir);
