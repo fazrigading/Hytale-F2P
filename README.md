@@ -272,8 +272,8 @@ The `.zip` version is useful for users who prefer a portable installation or nee
 
 1. Open your Singleplayer World
 2. Pause the game (Esc) > select Online Play > Turn on `Allow Other Players to Join` > Set password if needed > Press `Save`.
-3. Check the status `Connected via UPnP`.
-4. If your friends can't connect to your hosted Online-Play feature, please follow **Local Dedicated Server** tutorial in [SERVER.md](SERVER.md#b-local-dedicated-server).
+3. Check the status `Connected via UPnP`, it means you can use the Invite Codes for your friends.
+4. If your friends can't connect to your hosted Online-Play feature OR if it's showing `"Restricted (no UPnP)`, please follow the Tailscale/Playit.gg/Radmin tutorial in [SERVER.md](SERVER.md).
 
 ## 🖧 Host a Dedicated Server
 
