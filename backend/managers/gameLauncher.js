@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { exec } = require('child_process');
 const { promisify } = require('util');
 const { spawn } = require('child_process');
@@ -69,51 +68,9 @@ async function fetchAuthTokens(uuid, name) {
     };
   } catch (error) {
     console.error('Failed to fetch auth tokens:', error.message);
-    // Fallback to local generation if server unavailable
-    return generateLocalTokens(uuid, name);
+    // Don't use invalid local tokens that cause the game to hang
+    throw new Error(`Authentication server unavailable: ${error.message}. Please check your internet connection or try again later.`);
   }
-}
-
-// Fallback: Generate tokens locally (won't pass signature validation but allows offline testing)
-function generateLocalTokens(uuid, name) {
-  console.log('Using locally generated tokens (fallback mode)');
-  const authServerUrl = getAuthServerUrl();
-  const now = Math.floor(Date.now() / 1000);
-  const exp = now + 36000;
-
-  const header = Buffer.from(JSON.stringify({
-    alg: 'EdDSA',
-    kid: '2025-10-01',
-    typ: 'JWT'
-  })).toString('base64url');
-
-  const identityPayload = Buffer.from(JSON.stringify({
-    sub: uuid,
-    name: name,
-    username: name,
-    entitlements: ['game.base'],
-    scope: 'hytale:server hytale:client',
-    iat: now,
-    exp: exp,
-    iss: authServerUrl,
-    jti: uuidv4()
-  })).toString('base64url');
-
-  const sessionPayload = Buffer.from(JSON.stringify({
-    sub: uuid,
-    scope: 'hytale:server',
-    iat: now,
-    exp: exp,
-    iss: authServerUrl,
-    jti: uuidv4()
-  })).toString('base64url');
-
-  const signature = crypto.randomBytes(64).toString('base64url');
-
-  return {
-    identityToken: `${header}.${identityPayload}.${signature}`,
-    sessionToken: `${header}.${sessionPayload}.${signature}`
-  };
 }
 
 async function launchGame(playerNameOverride = null, progressCallback, javaPathOverride, installPathOverride, gpuPreference = 'auto', branchOverride = null) {
