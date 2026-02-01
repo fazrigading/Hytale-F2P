@@ -17,9 +17,9 @@
 
 ⭐ **If you find this project useful, please give it a STAR!** ⭐
 
-### ⚠️ **READ [QUICK START](#-quick-start) before Downloading & Installing the Launcher!** ⚠️
+### ⚠️ **WARNING: READ [QUICK START](#-quick-start) before Downloading & Installing the Launcher!** ⚠️
 
-#### 🛑 **Found a problem? Join the Discord and Select #Open-A-Ticket!: https://discord.gg/gME8rUy3MB** 🛑
+#### 🛑 **Found a problem? [Join the HF2P Discord](https://discord.gg/hf2pdc) and head to `#-⚠️-community-help`** 🛑
 
 <p>
   👍 If you like the project, <b>feel free to support us via Buy Me a Coffee!</b> ☕<br>
