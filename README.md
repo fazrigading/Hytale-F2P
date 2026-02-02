@@ -8,14 +8,13 @@
 </header>
 
 [![GitHub Downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-orange?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
-![License](https://img.shields.io/badge/License-Educational-blue?style=for-the-badge)
-[![Version](https://img.shields.io/badge/Version-2.2.1-green?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
+[![Version](https://img.shields.io/badge/Version-2.2.1-red?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-teal?style=for-the-badge)](https://github.com/amiayweb/Hytale-F2P/releases)
 
-[![GitHub stars](https://img.shields.io/github/stars/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/amiayweb/Hytale-F2P?style=social)](https://github.com/amiayweb/Hytale-F2P/network/members)
-
-⭐ **If you find this project useful, please give it a STAR!** ⭐
+[![GitHub stars](https://img.shields.io/github/stars/amiayweb/Hytale-F2P?style=for-the-badge&logo=github)](https://github.com/amiayweb/Hytale-F2P/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/amiayweb/Hytale-F2P?style=for-the-badge&logo=github)](https://github.com/amiayweb/Hytale-F2P/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/amiayweb/Hytale-F2P?style=for-the-badge&logo=github)](https://github.com/amiayweb/Hytale-F2P/issues)
+![License](https://img.shields.io/badge/License-Educational-purple?style=for-the-badge)
 
 ### ⚠️ **WARNING: READ [QUICK START](#-quick-start) before Downloading & Installing the Launcher!** ⚠️
 
@@ -30,9 +29,15 @@
   <img src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExem14OW1tanN3eHlyYmR4NW1sYmJkOTZmbmJxejdjZXB6MXY5cW12MSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/TDQOtnWgsBx99cNoyH/giphy.gif" width="120">
 </a>
 
+
+⭐ **If you find this project useful, please give it a STAR!** ⭐
+
+[![Star History Chart](https://api.star-history.com/svg?repos=amiayweb/Hytale-F2P&type=date&legend=top-left)](https://www.star-history.com/#amiayweb/Hytale-F2P&type=date&legend=top-left)
+
 </div>
 
 ---
+
 ## 📸 Screenshots
 
 <div align="center">
@@ -445,23 +450,12 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 
 ---
 
-## 📊 GitHub Stats
+## 📞 Contact Information
 
 <div align="center">
 
-![GitHub stars](https://img.shields.io/github/stars/amiayweb/Hytale-F2P?style=for-the-badge&logo=github)
-![GitHub forks](https://img.shields.io/github/forks/amiayweb/Hytale-F2P?style=for-the-badge&logo=github)
-![GitHub issues](https://img.shields.io/github/issues/amiayweb/Hytale-F2P?style=for-the-badge&logo=github)
-![GitHub downloads](https://img.shields.io/github/downloads/amiayweb/Hytale-F2P/total?style=for-the-badge&logo=github)
-
-</div>
-
-
-## 📞 Support
-
-<div align="center">
-
-**Need help?** Join us: https://discord.gg/gME8rUy3MB
+**Questions? Ads? Collaboration? Endorsement? Other business-related?** 
+Message the founders at https://discord.gg/hf2pdc
 
 </div>
 
