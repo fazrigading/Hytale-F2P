@@ -168,7 +168,7 @@
 * **Java JDK 25:**
   * [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-windows)
   * or [Alt 1: Adoptium](https://adoptium.net/temurin/releases/?version=25)
-  * or [Alt 2: Microsoft](https://learn.microsoft.com/en-us/java/openjdk/download), has Windows ARM64 support in version 25.
+  * or [Alt 2: Microsoft](https://learn.microsoft.com/en-us/java/openjdk/download).
 * **Latest Visual Studio Redist:** 
   * Download via [All-in-One by Techpowerup](https://www.techpowerup.com/download/visual-c-redistributable-runtime-package-all-in-one/) 
   * Or [Microsoft Visual C++ Redistributable](https://aka.ms/vc14/vc_redist.x64.exe)
@@ -177,7 +177,7 @@
 
 * Make sure you have already installed newest **GPU driver** especially proprietary NVIDIA, consult your distro docs or wiki.
   * Also make sure that your GPU can be connected to EGL, try checking it first (again, consult your distro docs or wiki) before installing Hytale game via our launcher.
-* [Not needed in update v2.2.0] Install `libpng` package to avoid `SDL3_Image` error:
+* [Not needed in update v2.2.0+] Install `libpng` package to avoid `SDL3_Image` error:
   * `libpng16-16 libpng-dev` for Ubuntu/Debian-based Distro
   * `libpng libpng-devel` for Fedora/RHEL-based Distro
   * `libpng` for Arch-based Distro
@@ -287,7 +287,7 @@ The `.zip` version is useful for users who prefer a portable installation or nee
 > `HytaleServer.rar` file is needed to set up a server on non-playing hardware (such as VPS/server hosting). Additional: **Linux ARM64** is supported for server only, not client.
 
 > [!IMPORTANT]
-> See detailed information of setting up a server here: [SERVER.md](SERVER.md). Download the latest patched JAR, the patched RAR, or the SH/BAT scripts from channel `#open-public-server` in our Discord Server. 
+> See detailed information of setting up a server here: [SERVER.md](SERVER.md).
 
 ---
 
@@ -305,7 +305,17 @@ See [BUILD.md](docs/BUILD.md) for comprehensive build instructions.
 
 ## 📋 Changelog
 
-### 🆕 v2.2.0
+### 🆕 v2.2.1
+- 👚 **Avatar Not Saving Bug Fix:** FINALLY, the long-awaited avatar saves is now working! 🙌 Show off your avatar skin in our Discord `#-media` text channel! 👀
+- 🚀 **HytaleClient Fails to Launch and Persists in Task Manager Bug Fix:** Major bug fix for all affected Windows users! No more ghost processes of `HytaleClient.exe` in Task Manager! And no more launch fail, that's hella one of an achievement 🔥 (If problem persists please create issue on Github 😢)
+- 🚦 **EPERM Bug Fix in 'Repair Game' Button:** Repair game will not produce Error Permission (EPERM) any more.
+- 🚨 **'Server Failed to Boot' Bug Fix:** Happy news for internet-limited countries (e.g. 🇷🇺 Russia, 🇹🇷 Turkey, 🇧🇷 Brazil, etc.)! We're now using proxy to host our patched JAR & check game version release status! Make sure you're already allow the `HytaleClient.exe` on Public & Private Windows Firewall 😉!
+- ⚡ **GPU Detection System Enhancements:** The detection system will now detect your GPU with `CimInstance` instead of `WmicObject`, which deprecated for most Windows 11 updates. Also, it's show how much your VRAM on each iGPU and dGPU! 🔍
+- ⚠️ **Failed to Deserialize Packets Bug Fix:** Shared `libzstd` library didn't get detected in Fedora/Bazzite/RHEL-based Linux Distros due to incorrect checking library order. 📑
+- 📟 **UUID Persistence Bug Fix:** Correlates to the avatar not saving bug, this fixes the persistence UUID when changing username. 🔖
+- 🌐 **Turkish Translation Fix:** 🇹🇷 Turkey players should feel at home now. 🏠
+
+### 🔄 v2.2.0
 - 🔃 **Game Patches Auto-Update Improvement:** No need to install 1.5GB for every updates! Game updates now reduced to almost **~90%** (Hytale Game Update 3 to 4 only take ~150MB).
 - 🩹 **Improved Patch System Pre-Release JAR:** In previous version, only Release JAR could be patched. Now it also can be used for Pre-Release JAR!
 - 🔗 **Fix Mods Manager Issue:** Mods now can be downloaded seamlessly from the launcher, use Profiles to install your preferred mod. It will also automatically copy from selected `Profile/<profilename>` to the `Mods` folder.
