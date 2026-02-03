@@ -180,6 +180,11 @@
 
 ### 🐧 Linux Prequisites
 
+* **Java JDK >= 21 (Recommended JDK 25):**
+  * [Oracle](https://www.oracle.com/java/technologies/downloads/#jdk25-linux)
+  * or [Alt 1: Adoptium](https://adoptium.net/temurin/releases/?version=25)
+  * or [Alt 2: OpenJDK](https://openjdk.org/install/)
+  * Most mods are built with JDK 25, so it's recommended to use JDK 25 for best compatibility.
 * Make sure you have already installed newest **GPU driver** especially proprietary NVIDIA, consult your distro docs or wiki.
   * Also make sure that your GPU can be connected to EGL, try checking it first (again, consult your distro docs or wiki) before installing Hytale game via our launcher.
 * [Not needed in update v2.2.0+] Install `libpng` package to avoid `SDL3_Image` error:

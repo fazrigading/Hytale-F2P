@@ -3,15 +3,49 @@ const axios = require('axios');
 const https = require('https');
 const { PassThrough } = require('stream');
 
-const PROXY_URL = process.env.HF2P_PROXY_URL || 'your_proxy_url_here';
-const SECRET_KEY = process.env.HF2P_SECRET_KEY || 'your_secret_key_here_for_jwt';
+const PROXY_URL = process.env.HF2P_PROXY_URL || null;
+const SECRET_KEY = process.env.HF2P_SECRET_KEY || null;
 const USE_DIRECT_FALLBACK = process.env.HF2P_USE_FALLBACK !== 'false';
 const DIRECT_TIMEOUT = 7000; // 7 seconds timeout
+const IS_DEVELOPMENT = process.env.NODE_ENV !== 'production';
 
-console.log('[ProxyClient] Initialized with proxy URL:', PROXY_URL ? 'YES' : 'NO');
-console.log('[ProxyClient] Secret key configured:', SECRET_KEY ? 'YES' : 'NO');
-console.log('[ProxyClient] Direct connection fallback:', USE_DIRECT_FALLBACK ? 'ENABLED' : 'DISABLED');
-console.log('[ProxyClient] Direct timeout before fallback:', DIRECT_TIMEOUT / 1000, 'seconds');
+// Validate configuration and warn developers
+function validateConfiguration() {
+  const warnings = [];
+  
+  if (!PROXY_URL) {
+    warnings.push('HF2P_PROXY_URL not configured - proxy requests will fail');
+  }
+  
+  if (!SECRET_KEY) {
+    warnings.push('HF2P_SECRET_KEY not configured - token generation will fail');
+  }
+  
+  if (warnings.length > 0) {
+    if (IS_DEVELOPMENT) {
+      console.warn('\n[ProxyClient] DEVELOPMENT MODE - Missing configuration detected:');
+      warnings.forEach(w => console.warn('[ProxyClient]', w));
+      console.warn('[ProxyClient] Setup instructions:');
+      console.warn('[ProxyClient] 1. Copy .env.example to .env');
+      console.warn('[ProxyClient] 2. Fill in HF2P_PROXY_URL and HF2P_SECRET_KEY');
+      console.warn('[ProxyClient] 3. Restart the application');
+      console.warn('[ProxyClient] For development without proxy, direct requests will be used\n');
+    } else {
+      console.error('\n[ProxyClient] PRODUCTION MODE - Missing critical configuration:');
+      warnings.forEach(w => console.error('[ProxyClient]', w));
+      console.error('[ProxyClient] Please set environment variables before running in production\n');
+    }
+  }
+}
+
+validateConfiguration();
+
+console.log('[ProxyClient] Initialized with configuration:');
+console.log('[ProxyClient]   - Proxy URL:', PROXY_URL ? 'Configured' : 'Not configured (dev mode)');
+console.log('[ProxyClient]   - Secret key:', SECRET_KEY ? 'Configured' : 'Not configured (dev mode)');
+console.log('[ProxyClient]   - Direct fallback:', USE_DIRECT_FALLBACK ? 'ENABLED' : 'DISABLED');
+console.log('[ProxyClient]   - Direct timeout:', DIRECT_TIMEOUT / 1000, 'seconds');
+console.log('[ProxyClient]   - Environment:', IS_DEVELOPMENT ? 'DEVELOPMENT' : 'PRODUCTION');
 
 function generateToken() {
   const timestamp = Date.now().toString();

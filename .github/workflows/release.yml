@@ -16,6 +16,16 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+
+      - name: Create Virtual .env File
+        # Because main.js needed physical env, we need to create virtual one to store it
+        run: |
+          $env_content = @"
+          HF2P_PROXY_URL=${{ secrets.HF2P_PROXY_URL }}
+          HF2P_SECRET_KEY=${{ secrets.HF2P_SECRET_KEY }}
+          NODE_ENV=production
+          "@
+          Set-Content -Path .env -Value $env_content
       
       - name: Build Windows Packages
         run: npx electron-builder --win --publish never
@@ -36,6 +46,14 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+
+      - name: Create Virtual .env File
+        run: |
+          cat << EOF > .env
+          HF2P_PROXY_URL=${{ secrets.HF2P_PROXY_URL }}
+          HF2P_SECRET_KEY=${{ secrets.HF2P_SECRET_KEY }}
+          NODE_ENV=production
+          EOF
 
       - name: Build macOS Packages
         env:
@@ -70,6 +88,14 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+
+      - name: Create Virtual .env File
+        run: |
+          cat << EOF > .env
+          HF2P_PROXY_URL=${{ secrets.HF2P_PROXY_URL }}
+          HF2P_SECRET_KEY=${{ secrets.HF2P_SECRET_KEY }}
+          NODE_ENV=production
+          EOF
 
       - name: Build Linux Packages
         run: |
@@ -117,6 +143,13 @@ jobs:
         run: |
           sudo -u builder bash << 'EOF'
           set -e
+          
+          cat << EOP > .env
+          HF2P_PROXY_URL=${{ secrets.HF2P_PROXY_URL }}
+          HF2P_SECRET_KEY=${{ secrets.HF2P_SECRET_KEY }}
+          NODE_ENV=production
+          EOP
+          
           makepkg --printsrcinfo > .SRCINFO
           makepkg -s --noconfirm
           EOF
