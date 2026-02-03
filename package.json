@@ -104,7 +104,12 @@
       ],
       "icon": "build/icon.icns",
       "artifactName": "${name}_${version}_${arch}.${ext}",
-      "category": "public.app-category.games"
+      "category": "public.app-category.games",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
     },
     "nsis": {
       "oneClick": false,
